@@ -30,17 +30,13 @@ type Board = M.Map Piece Pos
 
 data GameState = GameState {
   board :: Board,
-  dimension :: (Int, Int),
-  numBlacks :: Int,
-  numWhites :: Int
+  dimension :: (Int, Int)
 } deriving (Ord, Eq, Show, Read)
 
 emptyState :: Int -> Int -> GameState
 emptyState w h = GameState {
   board = M.empty,
-  dimension = (w, h),
-  numBlacks = 0,
-  numWhites = 0
+  dimension = (w, h)
 }
 
 
@@ -88,38 +84,20 @@ getHeight = do
 
 
 
-getNumBlacks :: MonadState GameState m => m Int
-getNumBlacks = do
-  state <- get
-  return $ numBlacks state
-
-getNumWhites :: MonadState GameState m => m Int
-getNumWhites = do
-  state <- get
-  return $ numWhites state
 
 
 getNumPieces :: MonadState GameState m => Color -> m Int
-getNumPieces Black = getNumBlacks
-getNumPieces White = getNumWhites
+getNumPieces color = do
+  board <- getBoard
+  return $ length [() | ((col, n), _) <- M.toList board, color == col]
 
-
-newBlackPiece :: MonadState GameState m => m Piece
-newBlackPiece = do
-  GameState { numBlacks = n, .. } <- get
-  put $ GameState { numBlacks = n + 1, .. }
-  return (Black, n)
-
-newWhitePiece :: MonadState GameState m => m Piece
-newWhitePiece = do
-  GameState { numWhites = n, .. } <- get
-  put $ GameState { numWhites = n + 1, .. }
-  return (White, n)
 
 newPiece :: MonadState GameState m => Color -> m Piece
-newPiece Black = newBlackPiece
-newPiece White = newWhitePiece
+newPiece color = do
+  board <- getBoard
+  let pieceNums = [n | ((col, n), _) <- M.toList board, color == col]
 
+  return (color, 1 + foldl max 0 pieceNums)
 
 -- validation of piece positions
 onBoard :: MonadState GameState m => Pos -> m Bool
