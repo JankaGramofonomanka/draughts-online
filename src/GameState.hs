@@ -135,13 +135,10 @@ validateState :: (MonadState GameState m, MonadError Error m) =>
   m ()
 validateState = do
   board <- getBoard
-  foldl foldFunc (pure ()) (M.toList board)
+  mapM_ mapFunc (M.toList board)
   
   where 
-    foldFunc :: (MonadState GameState m, MonadError Error m) => 
-      m () -> (Piece, Pos) -> m ()
-    foldFunc _ (piece, pos) = do
-      validatePiecePlacement piece pos
+    mapFunc (piece, pos) = validatePiecePlacement piece pos
 
 
 
@@ -160,3 +157,25 @@ placeNewPiece color pos = do
 
 
 
+initState :: Int -> Int -> Int -> GameState
+initState w h rows = fromRight $ evalStateT buildState $ emptyState w h where
+
+  -- this should never fail, therefore there `Left` case is undefined
+  fromRight (Right x) = x
+  
+  blackPositions = [ (x, y) | x <- [0..w-1],
+                              y <- [0..rows],
+                              x `mod` 2 == y `mod` 2 ]
+
+  whitePositions = [ (x, y) | x <- [0..w-1],
+                              y <- [h - rows .. h - 1],
+                              x `mod` 2 /= y `mod` 2 ]
+
+  buildState :: StateT GameState (Either Error) GameState
+  buildState = mapM_ (placeNewPiece Black) blackPositions
+            >> mapM_ (placeNewPiece White) whitePositions
+            >> get
+
+  
+  
+  
