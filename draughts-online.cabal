@@ -1,0 +1,83 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.33.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: eb2b781aeab544c76924e8d152b9f78c8eb165567938ad7b8ee213a895b97a47
+
+name:           draughts-online
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/githubuser/draughts-online#readme>
+homepage:       https://github.com/githubuser/draughts-online#readme
+bug-reports:    https://github.com/githubuser/draughts-online/issues
+author:         Author name here
+maintainer:     example@example.com
+copyright:      2021 Author name here
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/githubuser/draughts-online
+
+library
+  exposed-modules:
+      GameState
+      Lib
+  other-modules:
+      Paths_draughts_online
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.7 && <5
+    , containers
+    , mtl
+  default-language: Haskell2010
+
+executable draughts-online-client-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_draughts_online
+  hs-source-dirs:
+      client
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , containers
+    , draughts-online
+    , mtl
+  default-language: Haskell2010
+
+executable draughts-online-host-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_draughts_online
+  hs-source-dirs:
+      host
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , containers
+    , draughts-online
+    , mtl
+  default-language: Haskell2010
+
+test-suite draughts-online-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_draughts_online
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , containers
+    , draughts-online
+    , mtl
+  default-language: Haskell2010
