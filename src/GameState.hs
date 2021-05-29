@@ -8,13 +8,7 @@ import qualified Data.Map as M
 import Control.Monad.Except
 import Control.Monad.State.Strict
 
-
-
--- make an alias in case we want more sophisticated errors in the future
-type Error = String
-mkError :: String -> Error
-mkError = id
-
+import Errors (Error, outOfBoardError, colorMismatchError)
 
 
 -- `GameState` data definition
@@ -120,9 +114,9 @@ validatePiecePlacement piece pos = do
   let colorMatchesPos = color piece == posColor pos
 
   if not posOnBoard then
-    throwError "piece is placed out of board"
+    throwError outOfBoardError
   else if not colorMatchesPos then 
-    throwError $ mkError "piece color does not match field color"
+    throwError colorMismatchError
   else
     correct
 
