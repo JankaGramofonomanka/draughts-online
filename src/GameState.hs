@@ -135,7 +135,7 @@ validateState = do
     mapFunc (piece, pos) = validatePiecePlacement piece pos
 
 
-
+-- piece placement
 placePieceUnsafe :: MonadState GameState m => Piece -> Pos -> m ()
 placePieceUnsafe piece pos = do
   GameState { board = board, .. } <- get
@@ -150,7 +150,7 @@ placeNewPiece color pos = do
   placePieceUnsafe piece pos
 
 
-
+-- game initialization
 initState :: Int -> Int -> Int -> GameState
 initState w h rows = fromRight $ evalStateT buildState $ emptyState w h where
 
