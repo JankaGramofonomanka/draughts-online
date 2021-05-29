@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module GameState where
 
@@ -103,6 +104,17 @@ validateState = do
 
 
 
+placePieceUnsafe :: MonadState GameState m => Piece -> Pos -> m ()
+placePieceUnsafe piece pos = do
+  GameState { board = board, .. } <- get
+  let newBoard = M.insert piece pos board
+  put $ GameState { board = newBoard, .. }
+
+placePiece :: (MonadState GameState m, MonadError Error m) =>
+  Piece -> Pos -> m ()
+placePiece piece pos = do
+  validatePiecePlacement piece pos
+  placePieceUnsafe piece pos
 
 
 
