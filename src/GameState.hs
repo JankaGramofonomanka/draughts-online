@@ -4,6 +4,7 @@
 module GameState where
 
 import qualified Data.Map as M
+import qualified Data.List as L
 
 import Control.Monad.Except
 import Control.Monad.State.Strict
@@ -11,7 +12,8 @@ import Control.Monad.State.Strict
 import Errors ( Error, 
                 outOfBoardError, 
                 colorMismatchError, 
-                pieceNonExistentError
+                pieceNonExistentError,
+                piecesCollideError
               )
 
 
@@ -121,6 +123,13 @@ validatePiecePlacement piece pos = do
   
   unless (color piece == posColor pos) $ throwError colorMismatchError
 
+assertUniquePositions :: (MonadState GameState m, MonadError Error m) => m ()
+assertUniquePositions = do
+  board <- getBoard
+  let positions = [pos | (_, pos) <- M.toList board]
+  unless (L.nub positions /= positions) $ throwError piecesCollideError
+
+
 
 
 validateState :: (MonadState GameState m, MonadError Error m) =>
@@ -128,6 +137,7 @@ validateState :: (MonadState GameState m, MonadError Error m) =>
 validateState = do
   board <- getBoard
   mapM_ mapFunc (M.toList board)
+  assertUniquePositions
   
   where 
     mapFunc (piece, pos) = validatePiecePlacement piece pos
