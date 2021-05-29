@@ -71,25 +71,38 @@ posColor :: Pos -> Color
 posColor (x, y) = if x `mod` 2 == y `mod` 2 then Black else White
 
 
+validatePiecePlacement :: (MonadState GameState m, MonadError Error m) =>
+  Piece -> Pos -> m ()
+validatePiecePlacement piece pos = do
+  posOnBoard <- onBoard pos
+  let colorMatchesPos = color piece == posColor pos
+
+  if not posOnBoard then
+    throwError "piece is placed out of board"
+  else if not colorMatchesPos then 
+    throwError $ mkError "piece color does not match field color"
+  else
+    correct
+
+  where
+    correct = pure ()
+
+
+
 validateState :: (MonadState GameState m, MonadError Error m) =>
   m ()
 validateState = do
   board <- getBoard
-  stateIsValid <- foldl foldFunc (pure True) (M.toList board)
-
-  if stateIsValid then
-    return ()
+  foldl foldFunc (pure ()) (M.toList board)
   
-  else
-    throwError $ mkError "state is invalid"
-
   where 
-    foldFunc :: MonadState GameState m => m Bool -> (Piece, Pos) -> m Bool
-    foldFunc pureAcc (piece, pos) = do
-      acc <- pureAcc
-      posOnBoard <- onBoard pos
-      let colorMatchesPos = color piece == posColor pos
-      return $ acc && posOnBoard && colorMatchesPos
+    foldFunc :: (MonadState GameState m, MonadError Error m) => 
+      m () -> (Piece, Pos) -> m ()
+    foldFunc _ (piece, pos) = do
+      validatePiecePlacement piece pos
+
+
+
 
 
 
