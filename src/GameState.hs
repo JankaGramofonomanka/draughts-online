@@ -30,11 +30,18 @@ type Board = M.Map Piece Pos
 
 data GameState = GameState {
   board :: Board,
-  dimension :: (Int, Int)
+  dimension :: (Int, Int),
+  numBlacks :: Int,
+  numWhites :: Int
 } deriving (Ord, Eq, Show, Read)
 
 emptyState :: Int -> Int -> GameState
-emptyState w h = GameState {board = M.empty, dimension = (w, h)}
+emptyState w h = GameState {
+  board = M.empty,
+  dimension = (w, h),
+  numBlacks = 0,
+  numWhites = 0
+}
 
 
 
@@ -60,6 +67,40 @@ getHeight = do
   (width, height) <- getDimension
   return height
 
+
+
+
+getNumBlacks :: MonadState GameState m => m Int
+getNumBlacks = do
+  state <- get
+  return $ numBlacks state
+
+getNumWhites :: MonadState GameState m => m Int
+getNumWhites = do
+  state <- get
+  return $ numWhites state
+
+
+getNumPieces :: MonadState GameState m => Color -> m Int
+getNumPieces Black = getNumBlacks
+getNumPieces White = getNumWhites
+
+
+newBlackPiece :: MonadState GameState m => m Piece
+newBlackPiece = do
+  GameState { numBlacks = n, .. } <- get
+  put $ GameState { numBlacks = n + 1, .. }
+  return (Black, n)
+
+newWhitePiece :: MonadState GameState m => m Piece
+newWhitePiece = do
+  GameState { numWhites = n, .. } <- get
+  put $ GameState { numWhites = n + 1, .. }
+  return (White, n)
+
+newPiece :: MonadState GameState m => Color -> m Piece
+newPiece Black = newBlackPiece
+newPiece White = newWhitePiece
 
 
 -- validation of piece positions
@@ -110,9 +151,10 @@ placePieceUnsafe piece pos = do
   let newBoard = M.insert piece pos board
   put $ GameState { board = newBoard, .. }
 
-placePiece :: (MonadState GameState m, MonadError Error m) =>
-  Piece -> Pos -> m ()
-placePiece piece pos = do
+placeNewPiece :: (MonadState GameState m, MonadError Error m) =>
+  Color -> Pos -> m ()
+placeNewPiece color pos = do
+  piece <- newPiece color
   validatePiecePlacement piece pos
   placePieceUnsafe piece pos
 
