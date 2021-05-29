@@ -11,6 +11,8 @@ outOfBoardError = "piece is placed out of board"
 colorMismatchError :: Error
 colorMismatchError = "piece color does not match field color"
 
+pieceNonExistentError :: Error
+pieceNonExistentError = "piece does not exist"
 
 
 

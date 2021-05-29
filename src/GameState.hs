@@ -8,7 +8,11 @@ import qualified Data.Map as M
 import Control.Monad.Except
 import Control.Monad.State.Strict
 
-import Errors (Error, outOfBoardError, colorMismatchError)
+import Errors ( Error, 
+                outOfBoardError, 
+                colorMismatchError, 
+                pieceNonExistentError
+              )
 
 
 -- `GameState` data definition
@@ -21,6 +25,8 @@ num = snd
 
 type Pos = (Int, Int)
 type Board = M.Map Piece Pos
+
+
 
 data GameState = GameState {
   board :: Board,
@@ -36,6 +42,24 @@ emptyState w h = GameState {
   numBlacks = 0,
   numWhites = 0
 }
+
+
+data Direction
+  = TopLeft
+  | TopRight
+  | BotLeft
+  | BotRight
+
+  deriving (Ord, Eq, Show, Read)
+
+type Move = Pos -> Pos
+
+toMove :: Direction -> Move
+toMove dir (x, y) = case dir of
+  TopLeft   -> (x - 1, y + 1)
+  TopRight  -> (x + 1, y + 1)
+  BotLeft   -> (x - 1, y - 1)
+  BotRight  -> (x + 1, y - 1)
 
 
 
@@ -103,6 +127,11 @@ onBoard (x, y) = do
   (width, height) <- getDimension
   return $ 0 <= x && x < width && 0 <= y && y < height
 
+assertOnBoard :: (MonadState GameState m, MonadError Error m) => Pos -> m ()
+assertOnBoard pos = do
+  posOnBoard <- onBoard pos
+  unless posOnBoard $ throwError outOfBoardError
+
 posColor :: Pos -> Color
 posColor (x, y) = if x `mod` 2 == y `mod` 2 then Black else White
 
@@ -110,18 +139,9 @@ posColor (x, y) = if x `mod` 2 == y `mod` 2 then Black else White
 validatePiecePlacement :: (MonadState GameState m, MonadError Error m) =>
   Piece -> Pos -> m ()
 validatePiecePlacement piece pos = do
-  posOnBoard <- onBoard pos
-  let colorMatchesPos = color piece == posColor pos
-
-  if not posOnBoard then
-    throwError outOfBoardError
-  else if not colorMatchesPos then 
-    throwError colorMismatchError
-  else
-    correct
-
-  where
-    correct = pure ()
+  assertOnBoard pos
+  
+  unless (color piece == posColor pos) $ throwError colorMismatchError
 
 
 
@@ -148,6 +168,24 @@ placeNewPiece color pos = do
   piece <- newPiece color
   validatePiecePlacement piece pos
   placePieceUnsafe piece pos
+
+
+movePiece :: (MonadState GameState m, MonadError Error m) =>
+  Piece -> Direction -> m ()
+movePiece piece dir = do
+  board <- getBoard
+  
+  unless (M.member piece board) $ throwError pieceNonExistentError
+
+  let move = toMove dir
+  let Just pos = M.lookup piece board
+  let newPos = move pos
+
+  assertOnBoard newPos
+  
+  placePieceUnsafe piece newPos
+
+
 
 
 -- game initialization
