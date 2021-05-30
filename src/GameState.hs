@@ -21,6 +21,10 @@ import Errors ( Error,
 
 -- `GameState` data definition
 data Color = Black | White deriving (Ord, Eq, Show, Read)
+opposite :: Color -> Color
+opposite Black = White
+opposite White = Black
+
 type Piece = Color
 
 type Pos = (Int, Int)
@@ -171,8 +175,9 @@ getPiece color pos = do
 
 
 
+-- move piece and return the color that will move next
 movePiece :: (MonadState GameState m, MonadError Error m) =>
-  Color -> Pos -> Direction -> m ()
+  Color -> Pos -> Direction -> m Color
 movePiece color pos dir = do
   
   let move = toMove dir
@@ -190,6 +195,8 @@ movePiece color pos dir = do
       removePieceUnsafe pos
       placePieceUnsafe color newPos
 
+      return $ opposite color
+
 
     Just piece -> do
       when (piece == color) $ throwError piecesCollideError
@@ -200,6 +207,8 @@ movePiece color pos dir = do
       removePieceUnsafe pos
       removePieceUnsafe newPos
       placePieceUnsafe color newNewPos
+
+      return color
 
 
   
