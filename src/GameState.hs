@@ -8,25 +8,23 @@ import qualified Data.List as L
 
 import Control.Monad.Except
 import Control.Monad.State.Strict
+    ( evalStateT, MonadState(get, put), StateT )
 
 import Errors ( Error, 
                 outOfBoardError, 
-                colorMismatchError, 
+                placedOnWhiteError, 
                 pieceNonExistentError,
-                piecesCollideError
+                piecesCollideError,
+                opponentPieceError
               )
 
 
 -- `GameState` data definition
 data Color = Black | White deriving (Ord, Eq, Show, Read)
-type Piece = (Color, Int)
-color :: Piece -> Color
-color = fst
-num :: Piece -> Int
-num = snd
+type Piece = Color
 
 type Pos = (Int, Int)
-type Board = M.Map Piece Pos
+type Board = M.Map Pos Piece
 
 
 
@@ -91,15 +89,9 @@ getHeight = do
 getNumPieces :: MonadState GameState m => Color -> m Int
 getNumPieces color = do
   board <- getBoard
-  return $ length [() | ((col, n), _) <- M.toList board, color == col]
+  return $ length [() | (_, col) <- M.toList board, color == col]
 
 
-newPiece :: MonadState GameState m => Color -> m Piece
-newPiece color = do
-  board <- getBoard
-  let pieceNums = [n | ((col, n), _) <- M.toList board, color == col]
-
-  return (color, 1 + foldl max 0 pieceNums)
 
 -- validation of piece positions
 onBoard :: MonadState GameState m => Pos -> m Bool
@@ -112,22 +104,18 @@ assertOnBoard pos = do
   posOnBoard <- onBoard pos
   unless posOnBoard $ throwError outOfBoardError
 
-posColor :: Pos -> Color
-posColor (x, y) = if x `mod` 2 == y `mod` 2 then Black else White
+-- pieces can be placed only on black (valid) fields
+validPos :: Pos -> Bool
+validPos (x, y) = x `mod` 2 == y `mod` 2
 
 
 validatePiecePlacement :: (MonadState GameState m, MonadError Error m) =>
-  Piece -> Pos -> m ()
-validatePiecePlacement piece pos = do
+  Pos -> m ()
+validatePiecePlacement pos = do
   assertOnBoard pos
   
-  unless (color piece == posColor pos) $ throwError colorMismatchError
+  unless (validPos pos) $ throwError placedOnWhiteError
 
-assertUniquePositions :: (MonadState GameState m, MonadError Error m) => m ()
-assertUniquePositions = do
-  board <- getBoard
-  let positions = [pos | (_, pos) <- M.toList board]
-  unless (L.nub positions /= positions) $ throwError piecesCollideError
 
 
 
@@ -137,41 +125,84 @@ validateState :: (MonadState GameState m, MonadError Error m) =>
 validateState = do
   board <- getBoard
   mapM_ mapFunc (M.toList board)
-  assertUniquePositions
   
   where 
-    mapFunc (piece, pos) = validatePiecePlacement piece pos
+    mapFunc (pos, piece) = validatePiecePlacement pos
 
 
 -- piece placement
 placePieceUnsafe :: MonadState GameState m => Piece -> Pos -> m ()
 placePieceUnsafe piece pos = do
   GameState { board = board, .. } <- get
-  let newBoard = M.insert piece pos board
+  let newBoard = M.insert pos piece board
   put $ GameState { board = newBoard, .. }
 
+removePieceUnsafe :: MonadState GameState m => Pos -> m ()
+removePieceUnsafe pos = do
+  GameState { board = board, .. } <- get
+  let newBoard = M.delete pos board
+  put $ GameState {board = newBoard, .. }
+
+
+posOccupancy :: MonadState GameState m => Pos -> m (Maybe Color)
+posOccupancy pos = do
+  board <- getBoard
+  return $ M.lookup pos board
+
 placeNewPiece :: (MonadState GameState m, MonadError Error m) =>
-  Color -> Pos -> m ()
-placeNewPiece color pos = do
-  piece <- newPiece color
-  validatePiecePlacement piece pos
+  Piece -> Pos -> m ()
+placeNewPiece piece pos = do
+  validatePiecePlacement pos
+  occopancy <- posOccupancy pos
+  unless (occopancy == Nothing) $ throwError piecesCollideError
   placePieceUnsafe piece pos
 
 
-movePiece :: (MonadState GameState m, MonadError Error m) =>
-  Piece -> Direction -> m ()
-movePiece piece dir = do
-  board <- getBoard
+getPiece :: (MonadState GameState m, MonadError Error m) =>
+  Color -> Pos -> m Piece
+getPiece color pos = do
   
-  unless (M.member piece board) $ throwError pieceNonExistentError
+  occopancy <- posOccupancy pos
+  case occopancy of
+    Nothing -> throwError pieceNonExistentError 
+    Just piece -> do
+      unless (piece == color) $ throwError opponentPieceError
+      return piece
 
+
+
+movePiece :: (MonadState GameState m, MonadError Error m) =>
+  Color -> Pos -> Direction -> m ()
+movePiece color pos dir = do
+  
   let move = toMove dir
-  let Just pos = M.lookup piece board
   let newPos = move pos
 
-  assertOnBoard newPos
+
+  validatePiecePlacement pos
+  piece <- getPiece color pos
+  validatePiecePlacement newPos
+
+
+  occopancy <- posOccupancy pos
+  case occopancy of
+    Nothing -> do
+      removePieceUnsafe pos
+      placePieceUnsafe color newPos
+
+
+    Just piece -> do
+      when (piece == color) $ throwError piecesCollideError
+      
+      let newNewPos = move newPos
+      validatePiecePlacement newNewPos
+
+      removePieceUnsafe pos
+      removePieceUnsafe newPos
+      placePieceUnsafe color newNewPos
+
+
   
-  placePieceUnsafe piece newPos
 
 
 

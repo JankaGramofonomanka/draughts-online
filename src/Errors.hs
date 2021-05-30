@@ -8,14 +8,17 @@ type Error = String
 outOfBoardError :: Error
 outOfBoardError = "piece is placed out of board"
 
-colorMismatchError :: Error
-colorMismatchError = "piece color does not match field color"
+placedOnWhiteError :: Error
+placedOnWhiteError = "pice is placed on a white field"
 
 pieceNonExistentError :: Error
 pieceNonExistentError = "piece does not exist"
 
 piecesCollideError :: Error
 piecesCollideError = "pices collide"
+
+opponentPieceError :: Error
+opponentPieceError = "attempt to acces piece of the opponent"
 
 
 
