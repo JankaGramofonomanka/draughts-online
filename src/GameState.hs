@@ -191,6 +191,7 @@ movePiece color pos dir = do
 
   occopancy <- posOccupancy pos
   case occopancy of
+    
     Nothing -> do
       removePieceUnsafe pos
       placePieceUnsafe color newPos
@@ -211,7 +212,7 @@ movePiece color pos dir = do
       return color
 
 
-  
+
 
 
 
@@ -229,13 +230,13 @@ initState w h rows = fromRight $ evalStateT buildState $ emptyState w h where
 
   whitePositions = [ (x, y) | x <- [0..w-1],
                               y <- [h - rows .. h - 1],
-                              x `mod` 2 /= y `mod` 2 ]
+                              x `mod` 2 == y `mod` 2 ]
 
   buildState :: StateT GameState (Either Error) GameState
   buildState = mapM_ (placeNewPiece Black) blackPositions
             >> mapM_ (placeNewPiece White) whitePositions
             >> get
 
-  
-  
-  
+
+
+
