@@ -9,7 +9,7 @@ outOfBoardError :: Error
 outOfBoardError = "piece is placed out of board"
 
 placedOnWhiteError :: Error
-placedOnWhiteError = "pice is placed on a white field"
+placedOnWhiteError = "piece is placed on a white field"
 
 pieceNonExistentError :: Error
 pieceNonExistentError = "piece does not exist"
@@ -20,7 +20,11 @@ piecesCollideError = "pices collide"
 opponentPieceError :: Error
 opponentPieceError = "attempt to acces piece of the opponent"
 
+unknownDirError :: Error
+unknownDirError = "unknown direction"
 
+invalidInputError :: Error
+invalidInputError = "invalid input"
 
 
 
