@@ -15,7 +15,8 @@ import Errors ( Error,
                 placedOnWhiteError, 
                 pieceNonExistentError,
                 piecesCollideError,
-                opponentPieceError
+                opponentPieceError,
+                cannotMoveError
               )
 
 
@@ -33,14 +34,22 @@ type Board = M.Map Pos Piece
 
 
 data GameState = GameState {
+
   board :: Board,
-  dimension :: (Int, Int)
+
+  -- (width, height)
+  dimension :: (Int, Int),
+
+  -- if `lock` = `Just (x, y)`, then only the piece on `(x, y)` can be moved
+  lock :: Maybe Pos
+
 } deriving (Ord, Eq, Show, Read)
 
 emptyState :: Int -> Int -> GameState
 emptyState w h = GameState {
   board = M.empty,
-  dimension = (w, h)
+  dimension = (w, h),
+  lock = Nothing
 }
 
 
@@ -85,6 +94,10 @@ getHeight = do
   (width, height) <- getDimension
   return height
 
+getLock :: MonadState GameState m => m (Maybe Pos)
+getLock = do
+  state <- get
+  return $ lock state
 
 
 
@@ -124,14 +137,14 @@ validatePiecePlacement pos = do
 
 
 
-validateState :: (MonadState GameState m, MonadError Error m) =>
-  m ()
+validateState :: (MonadState GameState m, MonadError Error m) => m ()
 validateState = do
   board <- getBoard
   mapM_ mapFunc (M.toList board)
   
   where 
     mapFunc (pos, piece) = validatePiecePlacement pos
+
 
 
 -- piece placement
@@ -174,11 +187,42 @@ getPiece color pos = do
       return piece
 
 
+lockPieceUnsafe :: MonadState GameState m => Pos -> m ()
+lockPieceUnsafe pos = do
+  GameState { lock = lock, .. } <- get
+  put $ GameState { lock = Just pos, .. }
+
+
+lockPiece :: (MonadState GameState m, MonadError Error m) => 
+  Color -> Pos -> m ()
+lockPiece color pos = do
+  occopancy <- posOccupancy pos
+  when (occopancy == Nothing) $ throwError pieceNonExistentError
+  when (occopancy == Just (opposite color)) $ throwError opponentPieceError 
+  lockPieceUnsafe pos
+
+unlock :: MonadState GameState m => m ()
+unlock = do
+  GameState { lock = lock, .. } <- get
+  put $ GameState { lock = Nothing, .. }
+
+assertCanMove :: (MonadState GameState m, MonadError Error m) => Pos -> m ()
+assertCanMove pos = do
+  lock <- getLock
+  
+  case lock of
+    Nothing -> return ()
+    Just lockedPos -> unless (lockedPos == pos) $ throwError cannotMoveError
+  
+
+
 
 -- move piece and return the color that will move next
 movePiece :: (MonadState GameState m, MonadError Error m) =>
   Color -> Pos -> Direction -> m Color
 movePiece color pos dir = do
+
+  assertCanMove pos
   
   let move = toMove dir
   let newPos = move pos
@@ -196,6 +240,8 @@ movePiece color pos dir = do
       removePieceUnsafe pos
       placePieceUnsafe color newPos
 
+      unlock
+
       return $ opposite color
 
 
@@ -208,6 +254,8 @@ movePiece color pos dir = do
       removePieceUnsafe pos
       removePieceUnsafe newPos
       placePieceUnsafe color newNewPos
+      
+      lockPiece color newNewPos
 
       return color
 

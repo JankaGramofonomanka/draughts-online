@@ -26,7 +26,8 @@ unknownDirError = "unknown direction"
 invalidInputError :: Error
 invalidInputError = "invalid input"
 
-
+cannotMoveError :: Error
+cannotMoveError = "cannot move that piece"
 
 
 
