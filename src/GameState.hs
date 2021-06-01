@@ -16,7 +16,8 @@ import Errors ( Error,
                 pieceNonExistentError,
                 piecesCollideError,
                 opponentPieceError,
-                cannotMoveError
+                cannotMoveError,
+                fieldNotEmptyError
               )
 
 
@@ -186,6 +187,10 @@ getPiece color pos = do
       unless (piece == color) $ throwError opponentPieceError
       return piece
 
+assertEmpty :: (MonadState GameState m, MonadError Error m) => Pos -> m ()
+assertEmpty pos = do
+  occopancy <- posOccupancy pos
+  unless (occopancy == Nothing) $ throwError fieldNotEmptyError
 
 lockPieceUnsafe :: MonadState GameState m => Pos -> m ()
 lockPieceUnsafe pos = do
@@ -228,12 +233,11 @@ movePiece color pos dir = do
   let newPos = move pos
 
 
-  validatePiecePlacement pos
   piece <- getPiece color pos
   validatePiecePlacement newPos
 
 
-  occopancy <- posOccupancy pos
+  occopancy <- posOccupancy newPos
   case occopancy of
     
     Nothing -> do
@@ -250,6 +254,7 @@ movePiece color pos dir = do
       
       let newNewPos = move newPos
       validatePiecePlacement newNewPos
+      assertEmpty newNewPos
 
       removePieceUnsafe pos
       removePieceUnsafe newPos

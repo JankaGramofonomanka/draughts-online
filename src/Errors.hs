@@ -29,5 +29,6 @@ invalidInputError = "invalid input"
 cannotMoveError :: Error
 cannotMoveError = "cannot move that piece"
 
-
+fieldNotEmptyError :: Error
+fieldNotEmptyError = "field is not empty"
 
