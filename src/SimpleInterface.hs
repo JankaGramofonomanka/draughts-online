@@ -84,6 +84,8 @@ runGame :: (MonadState GameState m, MonadError Error m, MonadIO m) =>
   Color -> m Color
 runGame color = do
 
+  liftIO $ putStrLn $ "Move of player " ++ (show color)
+
   let mkMov = makeMove color
   nextPlayer <- catchError mkMov (\e -> printError e >> return color)
 
