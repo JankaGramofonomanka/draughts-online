@@ -66,10 +66,10 @@ type Move = Pos -> Pos
 
 toMove :: Direction -> Move
 toMove dir (x, y) = case dir of
-  TopLeft   -> (x - 1, y + 1)
-  TopRight  -> (x + 1, y + 1)
-  BotLeft   -> (x - 1, y - 1)
-  BotRight  -> (x + 1, y - 1)
+  TopLeft   -> (x - 1, y - 1)
+  TopRight  -> (x + 1, y - 1)
+  BotLeft   -> (x - 1, y + 1)
+  BotRight  -> (x + 1, y + 1)
 
 
 
