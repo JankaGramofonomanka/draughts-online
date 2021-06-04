@@ -54,17 +54,18 @@ printBoard (GameState { board = board, dimension = (w, h), .. }) = do
   y <- [-1..h-1]
   x <- [-1..w]
 
-  if x == w then return '\n' else do  
-  if x == -1 && y == -1 then return ' ' else do
-  if x == -1 then return $ head $ show y else do
-  if y == -1 then return $ head $ show x else do
+  if x == w then return '\n'
+  else if x == -1 && y == -1 then return ' '
+  else if x == -1 then return $ head $ show y
+  else if y == -1 then return $ head $ show x 
+  else do
 
-  let maybePiece = M.lookup (x, y) board
+    let maybePiece = M.lookup (x, y) board
 
-  case maybePiece of
-    Nothing     -> if x `mod` 2 == y `mod` 2 then return ' ' else return '_'
-    Just Black  -> return '*'
-    Just White  -> return 'o'
+    case maybePiece of
+      Nothing     -> if x `mod` 2 == y `mod` 2 then return ' ' else return '_'
+      Just Black  -> return '*'
+      Just White  -> return 'o'
 
 
 makeMove :: (MonadState GameState m, MonadError Error m, MonadIO m) => 
