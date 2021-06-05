@@ -32,3 +32,6 @@ cannotMoveError = "cannot move that piece"
 fieldNotEmptyError :: Error
 fieldNotEmptyError = "field is not empty"
 
+opponentMoveError :: Error
+opponentMoveError = "move of the opponent"
+

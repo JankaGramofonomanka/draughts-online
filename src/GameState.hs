@@ -17,7 +17,8 @@ import Errors ( Error,
                 piecesCollideError,
                 opponentPieceError,
                 cannotMoveError,
-                fieldNotEmptyError
+                fieldNotEmptyError,
+                opponentMoveError
               )
 
 
@@ -42,7 +43,10 @@ data GameState = GameState {
   dimension :: (Int, Int),
 
   -- if `lock` = `Just (x, y)`, then only the piece on `(x, y)` can be moved
-  lock :: Maybe Pos
+  lock :: Maybe Pos,
+
+  -- who is currently moving
+  mover :: Color
 
 } deriving (Ord, Eq, Show, Read)
 
@@ -50,7 +54,8 @@ emptyState :: Int -> Int -> GameState
 emptyState w h = GameState {
   board = M.empty,
   dimension = (w, h),
-  lock = Nothing
+  lock = Nothing,
+  mover = White
 }
 
 
@@ -100,6 +105,11 @@ getLock = do
   state <- get
   return $ lock state
 
+getMover :: MonadState GameState m => m Color
+getMover = do
+  state <- get
+  return $ mover state
+
 
 
 
@@ -145,6 +155,7 @@ validateState = do
   
   where 
     mapFunc (pos, piece) = validatePiecePlacement pos
+
 
 
 
@@ -211,23 +222,30 @@ unlock = do
   GameState { lock = lock, .. } <- get
   put $ GameState { lock = Nothing, .. }
 
-assertCanMove :: (MonadState GameState m, MonadError Error m) => Pos -> m ()
-assertCanMove pos = do
+assertCanMove :: (MonadState GameState m, MonadError Error m) => 
+  Color -> Pos -> m ()
+assertCanMove color pos = do
+  mover <- getMover
+  unless (mover == color) $ throwError opponentMoveError
+
   lock <- getLock
   
   case lock of
     Nothing -> return ()
     Just lockedPos -> unless (lockedPos == pos) $ throwError cannotMoveError
   
-
+switchMover :: MonadState GameState m => m ()
+switchMover = do
+  GameState { mover = color, .. } <- get
+  put $ GameState { mover = opposite color, .. }
 
 
 -- move piece and return the color that will move next
 movePiece :: (MonadState GameState m, MonadError Error m) =>
-  Color -> Pos -> Direction -> m Color
+  Color -> Pos -> Direction -> m ()
 movePiece color pos dir = do
 
-  assertCanMove pos
+  assertCanMove color pos
   
   let move = toMove dir
   let newPos = move pos
@@ -246,7 +264,7 @@ movePiece color pos dir = do
 
       unlock
 
-      return $ opposite color
+      switchMover
 
 
     Just piece -> do
@@ -261,8 +279,6 @@ movePiece color pos dir = do
       placePieceUnsafe color newNewPos
       
       lockPiece color newNewPos
-
-      return color
 
 
 

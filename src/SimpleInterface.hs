@@ -69,7 +69,7 @@ printBoard (GameState { board = board, dimension = (w, h), .. }) = do
 
 
 makeMove :: (MonadState GameState m, MonadError Error m, MonadIO m) => 
-  Color -> m Color 
+  Color -> m ()
 makeMove color = do
   state <- get
   liftIO $ putStrLn $ printBoard state
@@ -88,16 +88,19 @@ runGame color = do
   liftIO $ putStrLn $ "Move of player " ++ (show color)
 
   let mkMov = makeMove color
-  nextPlayer <- catchError mkMov (\e -> printError e >> return color)
+  catchError mkMov (\e -> printError e)
 
   numBlacks <- getNumPieces Black
   numWhites <- getNumPieces White
 
   if numBlacks == 0 then
-    return White 
+    return White
+
   else if numWhites == 0 then
     return Black
+
   else do
+    nextPlayer <- getMover
     runGame nextPlayer
 
   where
