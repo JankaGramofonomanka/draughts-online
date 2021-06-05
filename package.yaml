@@ -27,6 +27,9 @@ dependencies:
 - Spock-core
 - http-types
 - text
+- aeson
+- unordered-containers
+- vector
 
 
 library:

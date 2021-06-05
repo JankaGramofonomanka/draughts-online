@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e9d4269781f7ed4176afaae8284f553f578b27c650416f06013fbbe54737d68b
+-- hash: aa45bed269ee68f5662dfa9faeae7471229b1cd1a1af6a614f65460f5fa85b22
 
 name:           draughts-online
 version:        0.1.0.0
@@ -27,6 +27,7 @@ source-repository head
 
 library
   exposed-modules:
+      DataFormatting
       Errors
       GameState
       Host
@@ -39,11 +40,14 @@ library
   build-depends:
       Spock
     , Spock-core
+    , aeson
     , base >=4.7 && <5
     , containers
     , http-types
     , mtl
     , text
+    , unordered-containers
+    , vector
   default-language: Haskell2010
 
 executable draughts-online-client-exe
@@ -56,12 +60,15 @@ executable draughts-online-client-exe
   build-depends:
       Spock
     , Spock-core
+    , aeson
     , base >=4.7 && <5
     , containers
     , draughts-online
     , http-types
     , mtl
     , text
+    , unordered-containers
+    , vector
   default-language: Haskell2010
 
 executable draughts-online-host-exe
@@ -74,12 +81,15 @@ executable draughts-online-host-exe
   build-depends:
       Spock
     , Spock-core
+    , aeson
     , base >=4.7 && <5
     , containers
     , draughts-online
     , http-types
     , mtl
     , text
+    , unordered-containers
+    , vector
   default-language: Haskell2010
 
 test-suite draughts-online-test
@@ -93,10 +103,13 @@ test-suite draughts-online-test
   build-depends:
       Spock
     , Spock-core
+    , aeson
     , base >=4.7 && <5
     , containers
     , draughts-online
     , http-types
     , mtl
     , text
+    , unordered-containers
+    , vector
   default-language: Haskell2010
