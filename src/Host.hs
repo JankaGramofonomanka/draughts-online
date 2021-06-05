@@ -8,6 +8,7 @@ import Text.Read (readMaybe)
 import Data.Maybe
 import Data.String (fromString)
 
+import Network.HTTP.Types
 import Web.Spock
 
 import Control.Monad.Except
@@ -15,6 +16,7 @@ import Control.Monad.Except
 
 import GameState
 import Errors
+
 
 
 getParam :: (MonadIO m, Read a) => String -> a -> ActionT m a
@@ -29,7 +31,9 @@ getParam key defaultVal = do
 
 
 throwGameError :: (MonadError Error m, MonadIO m) => Error -> ActionT m a
-throwGameError error = text $ fromString error
+throwGameError error = do
+  setStatus status400
+  text $ fromString error
 
 catchGameError :: (MonadError Error m, MonadIO m) => 
   m a -> (Error -> ActionT m a) -> ActionT m a
