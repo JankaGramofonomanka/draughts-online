@@ -43,7 +43,7 @@ main = do
     post (fromString "err") testErrors
 
     get (fromString "state") stateView
-    --put (fromString "move") moveView
+    put (fromString "move") moveView
     --post (fromString "join") joinView
 
 

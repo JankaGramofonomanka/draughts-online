@@ -110,3 +110,24 @@ instance FromJSON Direction where
   parseJSON _ = empty
 
 
+
+newtype MoveInfo = MV (Color, Pos, Direction)
+
+instance ToJSON MoveInfo where
+  toJSON (MV (c, (x, y), dir)) 
+    = Object $ HM.fromList  [ ("color", toJSON c), 
+                              ("x", toJSON x),
+                              ("y", toJSON y),
+                              ("direction", toJSON dir)
+                            ]
+
+instance FromJSON MoveInfo where
+  parseJSON (Object obj) = do
+    color <- obj .: "color"
+    dir <- obj .: "direction"
+    x <- obj .: "x"
+    y <- obj .: "y"
+
+    return $ MV (color, (x, y), dir)
+
+  parseJSON _ = empty
