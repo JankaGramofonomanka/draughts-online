@@ -39,22 +39,16 @@ main = do
 
   let runner = runStateApp r
   runSpock 11350 $ spockT runner $ do
-    get root viewState
-    post root storeState
-    post (fromString "err") checkPos
+    post root testStorage
+    post (fromString "err") testErrors
 
-    --get (fromString "state") stateView
+    get (fromString "state") stateView
     --put (fromString "move") moveView
     --post (fromString "join") joinView
 
 
-viewState :: (S.MonadState GameState m, MonadIO m) => ActionT m ()
-viewState = do
-  (w, h) <- lift getDimension 
-  text $ fromString $ "width: " ++ (show w) ++ ", hwight: " ++ (show h)
-
-storeState :: (S.MonadState GameState m, MonadIO m) => ActionT m ()
-storeState = do
+testStorage :: (S.MonadState GameState m, MonadIO m) => ActionT m ()
+testStorage = do
   w <- getParam "w" 8
   h <- getParam "h" 8
   
@@ -67,9 +61,9 @@ storeState = do
       GameState { dimension = _, .. } <- S.get
       S.put $ GameState { dimension = dim, .. }
 
-checkPos :: (S.MonadState GameState m, MonadIO m, MonadError Error m) =>
+testErrors :: (S.MonadState GameState m, MonadIO m, MonadError Error m) =>
   ActionT m ()
-checkPos = do
+testErrors = do
   x <- getParam "x" 0
   y <- getParam "y" 0
 

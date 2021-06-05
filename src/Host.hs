@@ -9,16 +9,18 @@ import Data.Maybe
 import Data.String (fromString)
 
 import Network.HTTP.Types
-import Web.Spock
+import Web.Spock hiding (get, put)
 
+import Control.Monad.State
 import Control.Monad.Except
 
 
 import GameState
 import Errors
+import DataFormatting
 
 
-
+-- utils ----------------------------------------------------------------------
 getParam :: (MonadIO m, Read a) => String -> a -> ActionT m a
 getParam key defaultVal = do
   mValue <- param $ fromString key
@@ -51,10 +53,9 @@ execGameAction action = catchGameError action throwGameError
 
 
 
-
-
-
-
-
-
+-- views ----------------------------------------------------------------------
+stateView :: (MonadState GameState m, MonadIO m) => ActionT m ()
+stateView = do
+  st <- lift get
+  json st
 
