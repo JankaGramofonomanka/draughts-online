@@ -22,7 +22,10 @@ import Errors ( Error,
               )
 
 
--- `GameState` data definition
+
+
+
+-- `GameState` data definition ------------------------------------------------
 data Color = Black | White deriving (Ord, Eq, Show, Read)
 opposite :: Color -> Color
 opposite Black = White
@@ -78,7 +81,9 @@ toMove dir (x, y) = case dir of
 
 
 
--- get functions
+
+
+-- get functions --------------------------------------------------------------
 getBoard :: MonadState GameState m => m Board
 getBoard = do
   state <- get
@@ -120,8 +125,27 @@ getNumPieces color = do
   return $ length [() | (_, col) <- M.toList board, color == col]
 
 
+getPiece :: (MonadState GameState m, MonadError Error m) =>
+  Color -> Pos -> m Piece
+getPiece color pos = do
+  
+  occopancy <- posOccupancy pos
+  case occopancy of
+    Nothing -> throwError pieceNonExistentError 
+    Just piece -> do
+      unless (piece == color) $ throwError opponentPieceError
+      return piece
 
--- validation of piece positions
+posOccupancy :: MonadState GameState m => Pos -> m (Maybe Color)
+posOccupancy pos = do
+  board <- getBoard
+  return $ M.lookup pos board
+
+
+
+
+
+-- validations and assertions -------------------------------------------------
 onBoard :: MonadState GameState m => Pos -> m Bool
 onBoard (x, y) = do
   (width, height) <- getDimension
@@ -157,9 +181,29 @@ validateState = do
     mapFunc (pos, piece) = validatePiecePlacement pos
 
 
+assertEmpty :: (MonadState GameState m, MonadError Error m) => Pos -> m ()
+assertEmpty pos = do
+  occopancy <- posOccupancy pos
+  unless (occopancy == Nothing) $ throwError fieldNotEmptyError
 
 
--- piece placement
+assertCanMove :: (MonadState GameState m, MonadError Error m) => 
+  Color -> Pos -> m ()
+assertCanMove color pos = do
+  mover <- getMover
+  unless (mover == color) $ throwError opponentMoveError
+
+  lock <- getLock
+  
+  case lock of
+    Nothing -> return ()
+    Just lockedPos -> unless (lockedPos == pos) $ throwError cannotMoveError
+
+
+
+
+
+-- piece placement ------------------------------------------------------------
 placePieceUnsafe :: MonadState GameState m => Piece -> Pos -> m ()
 placePieceUnsafe piece pos = do
   GameState { board = board, .. } <- get
@@ -173,11 +217,6 @@ removePieceUnsafe pos = do
   put $ GameState {board = newBoard, .. }
 
 
-posOccupancy :: MonadState GameState m => Pos -> m (Maybe Color)
-posOccupancy pos = do
-  board <- getBoard
-  return $ M.lookup pos board
-
 placeNewPiece :: (MonadState GameState m, MonadError Error m) =>
   Piece -> Pos -> m ()
 placeNewPiece piece pos = do
@@ -187,22 +226,10 @@ placeNewPiece piece pos = do
   placePieceUnsafe piece pos
 
 
-getPiece :: (MonadState GameState m, MonadError Error m) =>
-  Color -> Pos -> m Piece
-getPiece color pos = do
-  
-  occopancy <- posOccupancy pos
-  case occopancy of
-    Nothing -> throwError pieceNonExistentError 
-    Just piece -> do
-      unless (piece == color) $ throwError opponentPieceError
-      return piece
 
-assertEmpty :: (MonadState GameState m, MonadError Error m) => Pos -> m ()
-assertEmpty pos = do
-  occopancy <- posOccupancy pos
-  unless (occopancy == Nothing) $ throwError fieldNotEmptyError
 
+
+-- lock / unlock pieces -------------------------------------------------------
 lockPieceUnsafe :: MonadState GameState m => Pos -> m ()
 lockPieceUnsafe pos = do
   GameState { lock = lock, .. } <- get
@@ -222,23 +249,21 @@ unlock = do
   GameState { lock = lock, .. } <- get
   put $ GameState { lock = Nothing, .. }
 
-assertCanMove :: (MonadState GameState m, MonadError Error m) => 
-  Color -> Pos -> m ()
-assertCanMove color pos = do
-  mover <- getMover
-  unless (mover == color) $ throwError opponentMoveError
 
-  lock <- getLock
-  
-  case lock of
-    Nothing -> return ()
-    Just lockedPos -> unless (lockedPos == pos) $ throwError cannotMoveError
-  
+
+
+
+-- other ----------------------------------------------------------------------
 switchMover :: MonadState GameState m => m ()
 switchMover = do
   GameState { mover = color, .. } <- get
   put $ GameState { mover = opposite color, .. }
 
+
+
+
+
+-- piece movement -------------------------------------------------------------
 
 -- move piece and return the color that will move next
 movePiece :: (MonadState GameState m, MonadError Error m) =>
@@ -284,9 +309,7 @@ movePiece color pos dir = do
 
 
 
-
-
--- game initialization
+-- game initialization --------------------------------------------------------
 initState :: Int -> Int -> Int -> GameState
 initState w h rows = fromRight $ evalStateT buildState $ emptyState w h where
 
