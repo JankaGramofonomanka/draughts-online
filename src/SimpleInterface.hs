@@ -110,7 +110,7 @@ runGame color = do
 type Game = StateT GameState (ExceptT Error IO) Color
 reallyRunGame :: IO ()
 reallyRunGame = do 
-  result <- evalStateT (runExceptT $ runGame White) (initState 8 8 3)
+  result <- evalStateT (runExceptT $ runGame White) defaultInitState
 
 
   case result of

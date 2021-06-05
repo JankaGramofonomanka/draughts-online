@@ -35,7 +35,7 @@ runStateApp r act = do
 
 main :: IO ()
 main = do
-  r <- newIORef $ initState 8 8 3
+  r <- newIORef $ defaultInitState
 
   let runner = runStateApp r
   runSpock 11350 $ spockT runner $ do
@@ -44,6 +44,7 @@ main = do
 
     get (fromString "state") stateView
     put (fromString "move") moveView
+    post (fromString "restart") restartView
     --post (fromString "join") joinView
 
 

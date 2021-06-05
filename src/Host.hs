@@ -59,11 +59,17 @@ stateView = do
   st <- lift get
   json st
 
-moveView ::(MonadState GameState m, MonadError Error m, MonadIO m) => 
+moveView :: (MonadState GameState m, MonadError Error m, MonadIO m) => 
   ActionT m ()
 moveView = do
   MV (color, pos, dir) <- jsonBody'
 
   execGameAction $ movePiece color pos dir
   stateView
+
+restartView ::  (MonadState GameState m, MonadIO m) => ActionT  m ()
+restartView = do
+  lift $ put $ defaultInitState
+  stateView
+
 

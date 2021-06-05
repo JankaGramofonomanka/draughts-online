@@ -330,5 +330,6 @@ initState w h rows = fromRight $ evalStateT buildState $ emptyState w h where
             >> get
 
 
-
+defaultInitState :: GameState
+defaultInitState = initState 8 8 3
 
