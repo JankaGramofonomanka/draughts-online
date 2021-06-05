@@ -8,7 +8,6 @@ import qualified Data.List as L
 
 import Control.Monad.Except
 import Control.Monad.State.Strict
-    ( evalStateT, MonadState(get, put), StateT )
 
 import Errors ( Error, 
                 outOfBoardError, 
@@ -145,6 +144,27 @@ posOccupancy pos = do
 
 
 
+-- put / modify functions -----------------------------------------------------
+modifyBoard :: MonadState GameState m => (Board -> Board) -> m ()
+modifyBoard modFunc = do
+  GameState { board = board, .. } <- get
+  put $ GameState { board = modFunc board, .. }
+
+putLock :: MonadState GameState m => (Maybe Pos) -> m ()
+putLock newLock = do
+  GameState { lock = _, .. } <- get
+  put $ GameState { lock = newLock, .. }
+
+switchMover :: MonadState GameState m => m ()
+switchMover = do
+  GameState { mover = color, .. } <- get
+  put $ GameState { mover = opposite color, .. }
+
+
+
+
+
+
 -- validations and assertions -------------------------------------------------
 onBoard :: MonadState GameState m => Pos -> m Bool
 onBoard (x, y) = do
@@ -205,16 +225,10 @@ assertCanMove color pos = do
 
 -- piece placement ------------------------------------------------------------
 placePieceUnsafe :: MonadState GameState m => Piece -> Pos -> m ()
-placePieceUnsafe piece pos = do
-  GameState { board = board, .. } <- get
-  let newBoard = M.insert pos piece board
-  put $ GameState { board = newBoard, .. }
+placePieceUnsafe piece pos = modifyBoard $ M.insert pos piece
 
 removePieceUnsafe :: MonadState GameState m => Pos -> m ()
-removePieceUnsafe pos = do
-  GameState { board = board, .. } <- get
-  let newBoard = M.delete pos board
-  put $ GameState {board = newBoard, .. }
+removePieceUnsafe pos = modifyBoard $ M.delete pos
 
 
 placeNewPiece :: (MonadState GameState m, MonadError Error m) =>
@@ -231,9 +245,7 @@ placeNewPiece piece pos = do
 
 -- lock / unlock pieces -------------------------------------------------------
 lockPieceUnsafe :: MonadState GameState m => Pos -> m ()
-lockPieceUnsafe pos = do
-  GameState { lock = lock, .. } <- get
-  put $ GameState { lock = Just pos, .. }
+lockPieceUnsafe pos = putLock $ Just pos
 
 
 lockPiece :: (MonadState GameState m, MonadError Error m) => 
@@ -245,19 +257,7 @@ lockPiece color pos = do
   lockPieceUnsafe pos
 
 unlock :: MonadState GameState m => m ()
-unlock = do
-  GameState { lock = lock, .. } <- get
-  put $ GameState { lock = Nothing, .. }
-
-
-
-
-
--- other ----------------------------------------------------------------------
-switchMover :: MonadState GameState m => m ()
-switchMover = do
-  GameState { mover = color, .. } <- get
-  put $ GameState { mover = opposite color, .. }
+unlock = putLock Nothing
 
 
 
