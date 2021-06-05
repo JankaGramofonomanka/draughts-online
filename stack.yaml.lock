@@ -3,7 +3,28 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages: []
+packages:
+- completed:
+    hackage: Spock-0.14.0.0@sha256:7e86ccc9e66ce0fdb84d1dcd328f852d3754c2dbfcb60d0e7e2f1cce2f32f177,3681
+    pantry-tree:
+      size: 1118
+      sha256: 6829dae9ba2492fae3e447afe13013dd863bd48fd5b8addfa74fc55d979de7b2
+  original:
+    hackage: Spock-0.14.0.0@sha256:7e86ccc9e66ce0fdb84d1dcd328f852d3754c2dbfcb60d0e7e2f1cce2f32f177,3681
+- completed:
+    hackage: Spock-core-0.14.0.0@sha256:b55935c2c2a259a9966999239ee6ec5e41f7d933a58baade687ffa4b4a46fe32,3457
+    pantry-tree:
+      size: 1113
+      sha256: c89cd43f14dd0cc960627f13e5bbc027172f0be85f277f998f06266d48ab8367
+  original:
+    hackage: Spock-core-0.14.0.0@sha256:b55935c2c2a259a9966999239ee6ec5e41f7d933a58baade687ffa4b4a46fe32,3457
+- completed:
+    hackage: reroute-0.6.0.0@sha256:43805b3fdc7ed1ba701cd10e249abc997b2291c8f374b8333bb2ea0e0d1dad0b,2382
+    pantry-tree:
+      size: 660
+      sha256: 0a27afabb1730147d6aa0ddf5cc6368951c4625e3706cb8f5388da9739372fa3
+  original:
+    hackage: reroute-0.6.0.0@sha256:43805b3fdc7ed1ba701cd10e249abc997b2291c8f374b8333bb2ea0e0d1dad0b,2382
 snapshots:
 - completed:
     size: 567675

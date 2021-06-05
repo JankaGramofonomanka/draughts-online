@@ -35,7 +35,10 @@ packages:
 # These entries can reference officially published versions as well as
 # forks / in-progress versions pinned to a git hash. For example:
 #
-# extra-deps:
+extra-deps:
+- Spock-0.14.0.0@sha256:7e86ccc9e66ce0fdb84d1dcd328f852d3754c2dbfcb60d0e7e2f1cce2f32f177,3681
+- Spock-core-0.14.0.0@sha256:b55935c2c2a259a9966999239ee6ec5e41f7d933a58baade687ffa4b4a46fe32,3457
+- reroute-0.6.0.0@sha256:43805b3fdc7ed1ba701cd10e249abc997b2291c8f374b8333bb2ea0e0d1dad0b,2382
 # - acme-missiles-0.3
 # - git: https://github.com/commercialhaskell/stack.git
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a

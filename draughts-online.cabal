@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 62e48244980e6f29b61b89e4c75359def3ef30cc3f353dbe964e741a81f83a88
+-- hash: 90630188b59b661982b0121d8b3321aa5653648f3aea78edd507bf9853035a41
 
 name:           draughts-online
 version:        0.1.0.0
@@ -36,9 +36,13 @@ library
   hs-source-dirs:
       src
   build-depends:
-      base >=4.7 && <5
+      Spock
+    , Spock-core
+    , base >=4.7 && <5
     , containers
+    , http-types
     , mtl
+    , text
   default-language: Haskell2010
 
 executable draughts-online-client-exe
@@ -49,10 +53,14 @@ executable draughts-online-client-exe
       client
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      Spock
+    , Spock-core
+    , base >=4.7 && <5
     , containers
     , draughts-online
+    , http-types
     , mtl
+    , text
   default-language: Haskell2010
 
 executable draughts-online-host-exe
@@ -63,10 +71,14 @@ executable draughts-online-host-exe
       host
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      Spock
+    , Spock-core
+    , base >=4.7 && <5
     , containers
     , draughts-online
+    , http-types
     , mtl
+    , text
   default-language: Haskell2010
 
 test-suite draughts-online-test
@@ -78,8 +90,12 @@ test-suite draughts-online-test
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      Spock
+    , Spock-core
+    , base >=4.7 && <5
     , containers
     , draughts-online
+    , http-types
     , mtl
+    , text
   default-language: Haskell2010

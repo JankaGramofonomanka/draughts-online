@@ -23,6 +23,11 @@ dependencies:
 - base >= 4.7 && < 5
 - mtl
 - containers
+- Spock
+- Spock-core
+- http-types
+- text
+
 
 library:
   source-dirs: src
