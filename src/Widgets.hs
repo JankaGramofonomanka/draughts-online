@@ -34,21 +34,24 @@ drawBoard appState = let
 
 
 
-dirWidget :: Direction -> Widget ()
-dirWidget dir = withBorderStyle unicode
-  $ borderWithLabel (str "")
+dirWidget :: AppState -> Direction -> Widget ()
+dirWidget appState dir = withBorderStyle unicode
+  $ borderWithLabel (str label)
   $ hCenter
   $ str $ show dir
 
-drawDirs :: Widget ()
-drawDirs = 
-      (dirWidget TopLeft <+> dirWidget TopRight)
-  <=> (dirWidget BotLeft <+> dirWidget BotRight)
+  where    
+    label = if selectedDir appState == dir then "THIS" else ""
+
+drawDirs :: AppState -> Widget ()
+drawDirs appState = 
+      (dirWidget appState TopLeft <+> dirWidget appState TopRight)
+  <=> (dirWidget appState BotLeft <+> dirWidget appState BotRight)
 
 drawApp :: AppState -> [Widget ()]
 drawApp appState = case phase appState of
   PieceSelection  -> return $ drawBoard appState
-  MoveSelection   -> return $ drawBoard appState <=> drawDirs
+  MoveSelection   -> return $ drawBoard appState <=> drawDirs appState
   Waiting         -> return $ drawBoard appState
 
 
