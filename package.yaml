@@ -30,6 +30,9 @@ dependencies:
 - aeson
 - unordered-containers
 - vector
+- colour
+- brick
+- vty
 
 
 library:
