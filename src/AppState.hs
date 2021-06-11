@@ -94,6 +94,8 @@ handleEvent appState (VtyEvent (V.EvKey k [])) = if isArrow k then
 
     _         -> continue appState
 
+handleEvent appState _ = continue appState
+
 isArrow :: Key -> Bool
 isArrow k = case k of
   V.KLeft   -> True

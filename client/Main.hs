@@ -16,8 +16,6 @@ import AppState
 
 
 
-theMap :: AttrMap
-theMap = attrMap V.defAttr []
 
 app :: App AppState () ()
 app = App { appDraw = drawApp
