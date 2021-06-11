@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 98b47fdb43f50c17efcc86a462b504f479f03581723887676916a638cbdc0fdb
+-- hash: 6a02572c3fdc4fef84875fbf14ebe4409392e84f8bf1c0d6e488bb7560ce0584
 
 name:           draughts-online
 version:        0.1.0.0
@@ -27,12 +27,14 @@ source-repository head
 
 library
   exposed-modules:
+      AppState
       DataFormatting
       Errors
       GameState
       Host
       Lib
       SimpleInterface
+      Widgets
   other-modules:
       Paths_draughts_online
   hs-source-dirs:
