@@ -26,8 +26,8 @@ myWidget = withBorderStyle unicode
   $ str "RECTANGLE"
 
 
-fieldWidget :: AppState -> Int -> Int -> Widget ()
-fieldWidget appState y x = case M.lookup (x, y) brd of
+fieldWidget :: Board -> Pos -> Int -> Int -> Widget ()
+fieldWidget brd selected y x = case M.lookup (x, y) brd of
 
   Just Black  -> withAttr blackPieceAttr  $ str [lChar, '○', rChar]
   Just White  -> withAttr whitePieceAttr  $ str [lChar, '●', rChar]
@@ -35,12 +35,9 @@ fieldWidget appState y x = case M.lookup (x, y) brd of
 
   where
     fieldAttr = if validPos (x, y) then blackPosAttr else whitePosAttr
-    brd = board $ gameState appState
 
-    selected = (x, y) == selectedPos appState
-
-    lChar = if selected then '[' else ' '
-    rChar = if selected then ']' else ' '
+    lChar = if (x, y) == selected then '[' else ' '
+    rChar = if (x, y) == selected then ']' else ' '
 
 
 
@@ -49,8 +46,10 @@ drawBoard :: AppState -> Widget ()
 drawBoard appState = let
     gameSt = gameState appState
     (w, h) = dimension gameSt
+    brd = board gameSt
+    sel = selectedPos appState
 
-    drawRow y = hBox $ map (fieldWidget appState y) [0..w-1]
+    drawRow y = hBox $ map (fieldWidget brd sel y) [0..w-1]
     drawBrd = vBox $ map drawRow [0..h-1]
     
   
@@ -65,13 +64,13 @@ drawBoard appState = let
 
 
 dirWidget :: AppState -> Direction -> Widget ()
-dirWidget appState dir = withBorderStyle unicode
-  $ borderWithLabel (str label)
+dirWidget appState dir = withBorderStyle style
+  $ border
   $ hCenter
   $ str $ show dir
 
   where    
-    label = if selectedDir appState == dir then "THIS" else ""
+    style = if selectedDir appState == dir then unicodeBold else unicode
 
 
 drawDirs :: AppState -> Widget ()
