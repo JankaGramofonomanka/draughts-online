@@ -36,8 +36,7 @@ initAppState = AppState {
   gameState = defaultEmptyState,
   selectedDir = TopLeft,
   selectedPos = (0,0),
-  --player = Nothing,
-  player = Just White,
+  player = Nothing,
   msg = Nothing,
   menuButton = Play
 }

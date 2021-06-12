@@ -45,7 +45,7 @@ main = do
     get (fromString "state") stateView
     put (fromString "move") moveView
     post (fromString "restart") restartView
-    --post (fromString "join") joinView
+    post (fromString "join") joinView
 
 
 testStorage :: (S.MonadState GameState m, MonadIO m) => ActionT m ()

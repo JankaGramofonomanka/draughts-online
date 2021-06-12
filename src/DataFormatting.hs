@@ -34,14 +34,16 @@ instance ToJSON GameState where
   toJSON GameState  { board = board,
                       dimension = (w, h),
                       lock = lock,
-                      mover = mover
+                      mover = mover,
+                      joined = joined
                     } 
 
     = Object $ HM.fromList  [ ("board",   fromBoard board),
                               ("width",   toJSON w),
                               ("height",  toJSON h),
                               ("lock",    toJSON lock),
-                              ("mover",   toJSON mover)
+                              ("mover",   toJSON mover),
+                              ("joined",  toJSON joined)
                             ]
   
     where
@@ -68,11 +70,14 @@ instance FromJSON GameState where
     boardArr <- obj .: "board"
     board <- toBoard boardArr
 
+    joined <- obj .: "joined"
+
 
     return GameState  { board = board,
                         dimension = (w, h),
                         lock = lock,
-                        mover = mover
+                        mover = mover,
+                        joined = joined
                       }
 
     where

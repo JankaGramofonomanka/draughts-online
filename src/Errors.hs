@@ -35,3 +35,5 @@ fieldNotEmptyError = "field is not empty"
 opponentMoveError :: Error
 opponentMoveError = "move of the opponent"
 
+cannotJoinError :: Error
+cannotJoinError = "both players alredy joined"

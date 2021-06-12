@@ -56,8 +56,26 @@ requestGameState = do
 
   putGameState newGameSt
   putPhase PieceSelection
+
+
+joinGame :: (MonadState AppState m, MonadIO m) => m ()
+joinGame = do
+
+  -- something to 
+  let rqBody = toJSON ""
+
+  resp <- liftIO $ Rq.post "http://127.0.0.1:11350/join" rqBody
+  jsonResp <- liftIO $ Rq.asJSON resp
+  let player = jsonResp ^. Rq.responseBody
+
+  putPlayer $ Just player
   
-  
+
+joinIfNecessary :: (MonadState AppState m, MonadIO m) => m ()
+joinIfNecessary = do
+  mbPlayer <- getPlayer
+
+  when (mbPlayer == Nothing) joinGame
 
 
 setErrMsg :: MonadState AppState m => HttpException -> m ()
@@ -109,7 +127,7 @@ execMenuButton appState = let
     Play -> suspendAndResume $ catch execView handler
 
     where
-      execView = execStateT requestGameState appState
+      execView = execStateT (joinIfNecessary >> requestGameState) appState
 
       handler :: HttpException -> IO AppState
       handler e = return $ execState (setErrMsg e) appState

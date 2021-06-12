@@ -48,7 +48,9 @@ data GameState = GameState {
   lock :: Maybe Pos,
 
   -- who is currently moving
-  mover :: Color
+  mover :: Color,
+
+  joined :: (Bool, Bool)
 
 } deriving (Ord, Eq, Show, Read)
 
@@ -57,7 +59,8 @@ emptyState w h = GameState {
   board = M.empty,
   dimension = (w, h),
   lock = Nothing,
-  mover = White
+  mover = White, 
+  joined = (False, False)
 }
 
 defaultEmptyState = emptyState 8 8
@@ -116,6 +119,11 @@ getMover = do
   state <- get
   return $ mover state
 
+getJoined :: MonadState GameState m => m (Bool, Bool)
+getJoined = do
+  state <- get
+  return $ joined state
+
 
 
 
@@ -162,6 +170,10 @@ switchMover = do
   GameState { mover = color, .. } <- get
   put $ GameState { mover = opposite color, .. }
 
+putJoined :: MonadState GameState m => (Bool, Bool) -> m ()
+putJoined jnd = do
+  GameState { joined = _, .. } <- get
+  put $ GameState { joined = jnd, .. }
 
 
 
