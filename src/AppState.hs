@@ -28,14 +28,14 @@ import GameState
 import DataFormatting
 
 
-data Phase = PieceSelection | MoveSelection | Waiting
+data Phase = PieceSelection | MoveSelection | OpponentMove
   deriving (Eq, Ord, Show, Read)
 
 nextPhase :: Phase -> Phase
 nextPhase ph = case ph of
   PieceSelection  -> MoveSelection
-  MoveSelection   -> Waiting
-  Waiting         -> PieceSelection
+  MoveSelection   -> OpponentMove
+  OpponentMove    -> PieceSelection
 
 
 data AppState = AppState {
@@ -66,10 +66,64 @@ getPhase = do
   AppState { phase = ph, .. } <- get
   return ph
 
+getGameState :: MonadState AppState m => m GameState
+getGameState = do
+  AppState { gameState = gs, .. } <- get
+  return gs
+
+getSelectedDir :: MonadState AppState m => m Direction
+getSelectedDir = do
+  AppState { selectedDir = dir, .. } <- get
+  return dir
+
+getSelectedPos :: MonadState AppState m => m Pos
+getSelectedPos = do
+  AppState { selectedPos = pos, .. } <- get
+  return pos
+
+getMsg :: MonadState AppState m => m (Maybe String)
+getMsg = do
+  AppState { msg = mbMsg, .. } <- get
+  return mbMsg
+
+getPlayer :: MonadState AppState m => m (Maybe Color)
+getPlayer = do
+  AppState { player = pl, .. } <- get
+  return pl
+
+
+
 putPhase :: MonadState AppState m => Phase -> m ()
 putPhase ph = do
   AppState { phase = _, .. } <- get
   put $ AppState { phase = ph, .. }
+
+putGameState :: MonadState AppState m => GameState -> m ()
+putGameState gs = do
+  AppState { gameState = _, .. } <- get
+  put $ AppState { gameState = gs, .. }
+
+
+putSelectedDir :: MonadState AppState m => Direction -> m ()
+putSelectedDir dir = do
+  AppState { selectedDir = _, .. } <- get
+  put $ AppState { selectedDir = dir, .. }
+
+putSelectedPos :: MonadState AppState m => Pos -> m ()
+putSelectedPos pos = do
+  AppState { selectedPos = _, .. } <- get
+  put $ AppState { selectedPos = pos, .. }
+
+putMsg :: MonadState AppState m => Maybe String -> m ()
+putMsg mbMsg = do
+  AppState { msg = _, .. } <- get
+  put $ AppState { msg = mbMsg, .. }
+
+putPlayer :: MonadState AppState m => Maybe Color -> m ()
+putPlayer mbColor = do
+  AppState { player = _, .. } <- get
+  put $ AppState { player = mbColor, .. }
+
 
 
 swichPhase :: MonadState AppState m => m ()
@@ -81,12 +135,11 @@ swichPhase = do
 
 mkMove :: (MonadState AppState m, MonadIO m) => m ()
 mkMove = do
-  AppState {
-    gameState = gameSt,
-    player = color,
-    selectedPos = pos, 
-    selectedDir = dir,
-    .. } <- get
+
+  gameSt <- getGameState
+  color <- getPlayer
+  pos <- getSelectedPos
+  dir <- getSelectedDir
 
   let rqBody = toJSON $ MV (fromJust color, pos, dir)
 
@@ -95,12 +148,15 @@ mkMove = do
   jsonResp <- liftIO $ Rq.asJSON resp
   let newGameSt = jsonResp ^. Rq.responseBody
   
-  put $ AppState {
-    gameState = newGameSt, 
-    player = color,
-    selectedPos = pos, 
-    selectedDir = dir,
-    .. }
+  putGameState newGameSt
+
+  case lock newGameSt of
+    Nothing -> putPhase OpponentMove
+
+    Just locked -> do
+      putSelectedPos locked
+      putPhase MoveSelection
+  
   
 
 setMsg :: MonadState AppState m =>  HttpException -> m ()
@@ -131,10 +187,11 @@ handleEnter appState = case phase appState of
   _ -> continue $ execState swichPhase appState 
 
   where
-    x = execStateT (unsetMsg >> mkMove >> swichPhase) appState
+    x = execStateT (unsetMsg >> mkMove) appState
 
     handler :: HttpException -> IO AppState
-    handler e = return $ execState (setMsg e >> swichPhase) appState
+    handler e = return $ 
+      execState (setMsg e >> putPhase PieceSelection) appState
 
 
 

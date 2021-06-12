@@ -85,7 +85,7 @@ drawPhase appState = let
   in case ph of
     PieceSelection  -> str "Select piece to move"
     MoveSelection   -> str "Select where to move the piece"
-    Waiting         -> str "Waiting for response ..."
+    OpponentMove    -> str "Waiting for opponent ..."
 
 
 drawMsg :: AppState -> Widget ()
@@ -104,7 +104,7 @@ drawApp appState = return $
   <=> case phase appState of
     PieceSelection  -> drawBoard appState
     MoveSelection   -> drawBoard appState <=> drawDirs appState
-    Waiting         -> drawBoard appState
+    OpponentMove    -> drawBoard appState
 
 
 
