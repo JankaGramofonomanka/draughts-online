@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 48978babd4531d7ee2443a085efcdef7e1e03abcded18fa1fdefca37d3821599
+-- hash: 23c70c14c9f09113b6c83951b759f9462315546305d4d96d89d2150ef5609f6a
 
 name:           draughts-online
 version:        0.1.0.0
@@ -53,6 +53,7 @@ library
     , mtl
     , text
     , unordered-containers
+    , utf8-string
     , vector
     , vty
     , wreq
@@ -80,6 +81,7 @@ executable draughts-online-client-exe
     , mtl
     , text
     , unordered-containers
+    , utf8-string
     , vector
     , vty
     , wreq
@@ -107,6 +109,7 @@ executable draughts-online-host-exe
     , mtl
     , text
     , unordered-containers
+    , utf8-string
     , vector
     , vty
     , wreq
@@ -135,6 +138,7 @@ test-suite draughts-online-test
     , mtl
     , text
     , unordered-containers
+    , utf8-string
     , vector
     , vty
     , wreq

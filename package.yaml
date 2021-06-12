@@ -36,6 +36,7 @@ dependencies:
 - wreq
 - lens
 - http-client
+- utf8-string
 
 
 library:

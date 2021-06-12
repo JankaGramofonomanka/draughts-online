@@ -15,13 +15,14 @@ import Brick hiding (Direction)
 import Brick.Widgets.Center
 import Brick.Widgets.Border
 import Brick.Widgets.Border.Style
-import Graphics.Vty as V
+import qualified Graphics.Vty as V
 
 
 import Data.Aeson
 import qualified Network.Wreq as Rq
 import Control.Lens
 import Network.HTTP.Client
+import Data.ByteString.UTF8
 
 import GameState
 import DataFormatting
@@ -41,7 +42,9 @@ data AppState = AppState {
   phase :: Phase,
   gameState :: GameState,
   selectedDir :: Direction,
-  selectedPos :: Pos
+  selectedPos :: Pos,
+  player :: Maybe Color,
+  msg :: Maybe String
 }
 
 
@@ -50,7 +53,9 @@ initAppState = AppState {
   phase = PieceSelection, 
   gameState = defaultInitState,
   selectedDir = TopLeft,
-  selectedPos = (0,0)
+  selectedPos = (0,0),
+  player = Just White,
+  msg = Nothing 
 }
 
 
@@ -76,36 +81,64 @@ swichPhase = do
 
 mkMove :: (MonadState AppState m, MonadIO m) => m ()
 mkMove = do
-  AppState {gameState = gameSt, .. } <- get
-  let rqBody = toJSON $ MV (Black, (0,0), BotRight)
+  AppState {
+    gameState = gameSt,
+    player = color,
+    selectedPos = pos, 
+    selectedDir = dir,
+    .. } <- get
+
+  let rqBody = toJSON $ MV (fromJust color, pos, dir)
 
   resp <- liftIO $ Rq.put "http://127.0.0.1:11350/move" rqBody
 
   jsonResp <- liftIO $ Rq.asJSON resp
   let newGameSt = jsonResp ^. Rq.responseBody
   
-  put $ AppState {gameState = newGameSt, .. }
+  put $ AppState {
+    gameState = newGameSt, 
+    player = color,
+    selectedPos = pos, 
+    selectedDir = dir,
+    .. }
   
 
 setMsg :: MonadState AppState m =>  HttpException -> m ()
-setMsg e = return ()
+setMsg e = case e of
+  
+  HttpExceptionRequest _ (StatusCodeException _ txt) -> 
+    actuallySetMsg $ toString txt
+  _ -> actuallySetMsg " unknown exception"
+
+
+  where
+    actuallySetMsg txt = do
+      AppState { msg = msg, .. } <- get
+      let newMsg = Just $ "Error: " ++ txt
+      put $ AppState { msg = newMsg, .. }
+
+
+unsetMsg :: MonadState AppState m =>  m ()
+unsetMsg = do
+  AppState { msg = msg, .. } <- get
+  put $ AppState { msg = Nothing, .. }
+
 
 handleEnter :: AppState ->  EventM n1 (Next AppState)
 handleEnter appState = case phase appState of
   MoveSelection -> suspendAndResume $ catch x handler
-  --MoveSelection -> suspendAndResume $ x
 
   _ -> continue $ execState swichPhase appState 
 
   where
-    x = execStateT mkMove appState
+    x = execStateT (unsetMsg >> mkMove >> swichPhase) appState
 
     handler :: HttpException -> IO AppState
     handler e = return $ execState (setMsg e >> swichPhase) appState
 
 
 
-neighbourDirButton :: Direction -> Key -> Direction
+neighbourDirButton :: Direction -> V.Key -> Direction
 neighbourDirButton TopLeft  V.KRight  = TopRight
 neighbourDirButton TopLeft  V.KDown   = BotLeft
 neighbourDirButton TopRight V.KLeft   = TopLeft
@@ -116,7 +149,7 @@ neighbourDirButton BotRight V.KLeft   = BotLeft
 neighbourDirButton BotRight V.KUp     = TopRight
 neighbourDirButton dir _ = dir
 
-neighbourField :: Pos -> Pos -> Key -> Pos
+neighbourField :: Pos -> Pos -> V.Key -> Pos
 neighbourField dim pos k = let
     (w, h) = dim
     (x, y) = pos
@@ -133,13 +166,13 @@ neighbourField dim pos k = let
 
 
 
-selectDir :: MonadState AppState m => Key -> m ()
+selectDir :: MonadState AppState m => V.Key -> m ()
 selectDir k = do
   AppState { selectedDir = dir, .. } <- get
   let newDir = neighbourDirButton dir k
   put $ AppState { selectedDir = newDir, .. }
 
-selectPos :: MonadState AppState m => Key -> m ()
+selectPos :: MonadState AppState m => V.Key -> m ()
 selectPos k = do
   AppState { selectedPos = pos, gameState = gameSt, .. } <- get
   
@@ -150,7 +183,7 @@ selectPos k = do
   put $ AppState { selectedPos = newPos, gameState = gameSt, .. }
   
 
-handleArrow :: MonadState AppState m => Key -> m ()
+handleArrow :: MonadState AppState m => V.Key -> m ()
 handleArrow k = do
   ph <- getPhase
 
@@ -161,6 +194,12 @@ handleArrow k = do
 
 
 
+swichPlayer :: MonadState AppState m => m ()
+swichPlayer = do
+  AppState { player = mColor, .. } <- get
+  case mColor of
+    Nothing -> return ()
+    Just color -> put $ AppState { player = Just $ opposite color, .. }
 
 handleEvent :: AppState -> BrickEvent n e -> EventM n1 (Next AppState)
 handleEvent appState (VtyEvent (V.EvKey k [])) = if isArrow k then
@@ -168,14 +207,16 @@ handleEvent appState (VtyEvent (V.EvKey k [])) = if isArrow k then
     
   else case k of
     V.KEsc    -> halt appState 
-    --V.KEnter  -> continue $ execState swichPhase appState 
     V.KEnter  -> handleEnter appState 
+
+    -- cheat for the purpose of testing
+    V.KChar 'c' -> continue $ execState swichPlayer appState
 
     _         -> continue appState
 
 handleEvent appState _ = continue appState
 
-isArrow :: Key -> Bool
+isArrow :: V.Key -> Bool
 isArrow k = case k of
   V.KLeft   -> True
   V.KRight  -> True

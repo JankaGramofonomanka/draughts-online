@@ -1,5 +1,7 @@
 {-# LANGUAGE UnicodeSyntax #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
+
 module Widgets where
 
 
@@ -87,7 +89,9 @@ drawPhase appState = let
 
 
 drawMsg :: AppState -> Widget ()
-drawMsg _ = str " "
+drawMsg AppState { msg = mMsg, .. } = case mMsg of
+  Nothing -> str " "
+  Just msg -> str msg
 
 drawInfo :: AppState -> Widget ()
 drawInfo appState = border $ hCenter $ drawPhase appState <=> drawMsg appState
