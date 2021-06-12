@@ -32,7 +32,8 @@ nextPhase ph = case ph of
 data AppState = AppState {
   phase :: Phase,
   gameState :: GameState,
-  selectedDir :: Direction
+  selectedDir :: Direction,
+  selectedPos :: Pos
 }
 
 
@@ -40,9 +41,12 @@ initAppState :: AppState
 initAppState = AppState {
   phase = MoveSelection, 
   gameState = defaultInitState,
-  selectedDir = TopLeft
+  selectedDir = TopLeft,
+  selectedPos = (0,0)
 }
 
+
+  
 
 getPhase :: MonadState AppState m => m Phase
 getPhase = do
@@ -74,13 +78,50 @@ neighbourDirButton BotRight V.KLeft   = BotLeft
 neighbourDirButton BotRight V.KUp     = TopRight
 neighbourDirButton dir _ = dir
 
+neighbourField :: Pos -> Pos -> Key -> Pos
+neighbourField dim pos k = let
+    (w, h) = dim
+    (x, y) = pos
+  
+  in case k of
+    V.KRight  -> (min (w - 1) (x + 1), y)
+    V.KLeft   -> (max 0 (x - 1), y)
+
+    -- the y-axis is reversed i.e. 0 is in the top
+    V.KDown   -> (x, min (h - 1) (y + 1))
+    V.KUp     -> (x, max 0 (y - 1))
+
+    _         -> (x, y)
 
 
-handleArrow :: MonadState AppState m => Key -> m ()
-handleArrow k = do
+
+selectDir :: MonadState AppState m => Key -> m ()
+selectDir k = do
   AppState { selectedDir = dir, .. } <- get
   let newDir = neighbourDirButton dir k
   put $ AppState { selectedDir = newDir, .. }
+
+selectPos :: MonadState AppState m => Key -> m ()
+selectPos k = do
+  AppState { selectedPos = pos, gameState = gameSt, .. } <- get
+  return ()
+  
+  let dim = dimension gameSt
+
+  let newPos = neighbourField dim pos k
+
+  put $ AppState { selectedPos = newPos, gameState = gameSt, .. }
+  
+
+handleArrow :: MonadState AppState m => Key -> m ()
+handleArrow k = do
+  ph <- getPhase
+
+  case ph of
+    MoveSelection   -> selectDir k
+    PieceSelection  -> selectPos k
+    _               -> return ()
+
 
 
 

@@ -26,16 +26,21 @@ myWidget = withBorderStyle unicode
   $ str "RECTANGLE"
 
 
-fieldWidget :: Board -> Int -> Int -> Widget ()
---fieldWidget board y x = (wgt <+> vBorder) <=> hBorder
-fieldWidget board y x = case M.lookup (x, y) board of
+fieldWidget :: AppState -> Int -> Int -> Widget ()
+fieldWidget appState y x = case M.lookup (x, y) brd of
 
-  Just Black  -> withAttr blackPieceAttr $ str " ○ "
-  Just White  -> withAttr whitePieceAttr $ str " ● "
-  Nothing     -> withAttr fieldAttr $ str "   "
+  Just Black  -> withAttr blackPieceAttr  $ str [lChar, '○', rChar]
+  Just White  -> withAttr whitePieceAttr  $ str [lChar, '●', rChar]
+  Nothing     -> withAttr fieldAttr       $ str [lChar, ' ', rChar]
 
   where
     fieldAttr = if validPos (x, y) then blackPosAttr else whitePosAttr
+    brd = board $ gameState appState
+
+    selected = (x, y) == selectedPos appState
+
+    lChar = if selected then '[' else ' '
+    rChar = if selected then ']' else ' '
 
 
 
@@ -44,9 +49,8 @@ drawBoard :: AppState -> Widget ()
 drawBoard appState = let
     gameSt = gameState appState
     (w, h) = dimension gameSt
-    brd = board gameSt
 
-    drawRow y = hBox $ map (fieldWidget brd y) [0..w-1]
+    drawRow y = hBox $ map (fieldWidget appState y) [0..w-1]
     drawBrd = vBox $ map drawRow [0..h-1]
     
   
@@ -102,8 +106,8 @@ whitePieceAttr = "whitePiece"
 
 theMap :: AttrMap
 theMap = attrMap V.defAttr
-  [ (blackPosAttr, V.black `on` V.black)
-  , (whitePosAttr, V.white  `on` V.white)
+  [ (blackPosAttr, V.white `on` V.black)
+  , (whitePosAttr, V.black  `on` V.white)
   , (blackPieceAttr, V.white `on` V.black)
   , (whitePieceAttr, V.white `on` V.black)
   ]
