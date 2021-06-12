@@ -78,6 +78,12 @@ drawDirs appState = hCenter $
       (dirWidget appState TopLeft <+> dirWidget appState TopRight)
   <=> (dirWidget appState BotLeft <+> dirWidget appState BotRight)
 
+drawPlayer :: AppState -> Widget ()
+drawPlayer AppState { player = mbColor , .. } = str 
+  $ "Your color is: " ++ case mbColor of
+    Nothing -> "not selected"
+    Just color -> show color
+
 drawPhase :: AppState -> Widget ()
 drawPhase appState = let
     ph = phase appState
@@ -94,7 +100,11 @@ drawMsg AppState { msg = mMsg, .. } = case mMsg of
   Just msg -> str msg
 
 drawInfo :: AppState -> Widget ()
-drawInfo appState = border $ hCenter $ drawPhase appState <=> drawMsg appState
+drawInfo appState = border
+    $ hCenter
+    $ drawPlayer appState
+  <=> drawPhase appState 
+  <=> drawMsg appState
 
 
 
