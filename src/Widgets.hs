@@ -19,13 +19,6 @@ import AppState
 
 
 
-myWidget :: Widget ()
-myWidget = withBorderStyle unicode 
-  $ borderWithLabel (str "rectangle")
-  $ hCenter
-  $ str "RECTANGLE"
-
-
 fieldWidget :: Board -> Pos -> Int -> Int -> Widget ()
 fieldWidget brd selected y x = case M.lookup (x, y) brd of
 
@@ -66,24 +59,48 @@ drawBoard appState = let
 dirWidget :: AppState -> Direction -> Widget ()
 dirWidget appState dir = withBorderStyle style
   $ border
-  $ hCenter
-  $ str $ show dir
+  $ padLeftRight 1
+  $ str $ prettyShow dir
 
-  where    
+  where
     style = if selectedDir appState == dir then unicodeBold else unicode
+    prettyShow d = case d of
+      TopLeft   -> "↖"
+      TopRight  -> "↗"
+      BotLeft   -> "↙"
+      BotRight  -> "↘"
 
 
 drawDirs :: AppState -> Widget ()
-drawDirs appState = 
+drawDirs appState = hCenter $ 
       (dirWidget appState TopLeft <+> dirWidget appState TopRight)
   <=> (dirWidget appState BotLeft <+> dirWidget appState BotRight)
 
+drawPhase :: AppState -> Widget ()
+drawPhase appState = let
+    ph = phase appState
+
+  in case ph of
+    PieceSelection  -> str "Select piece to move"
+    MoveSelection   -> str "Select where to move the piece"
+    Waiting         -> str "Waiting for response ..."
+
+
+drawMsg :: AppState -> Widget ()
+drawMsg _ = str " "
+
+drawInfo :: AppState -> Widget ()
+drawInfo appState = border $ hCenter $ drawPhase appState <=> drawMsg appState
+
+
 
 drawApp :: AppState -> [Widget ()]
-drawApp appState = case phase appState of
-  PieceSelection  -> return $ drawBoard appState
-  MoveSelection   -> return $ drawBoard appState <=> drawDirs appState
-  Waiting         -> return $ drawBoard appState
+drawApp appState = return $ 
+      drawInfo appState 
+  <=> case phase appState of
+    PieceSelection  -> drawBoard appState
+    MoveSelection   -> drawBoard appState <=> drawDirs appState
+    Waiting         -> drawBoard appState
 
 
 
