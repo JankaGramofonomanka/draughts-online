@@ -39,7 +39,7 @@ data AppState = AppState {
 
 initAppState :: AppState
 initAppState = AppState {
-  phase = MoveSelection, 
+  phase = PieceSelection, 
   gameState = defaultInitState,
   selectedDir = TopLeft,
   selectedPos = (0,0)
