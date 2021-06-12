@@ -11,7 +11,7 @@ import Brick hiding (Direction)
 import Brick.Widgets.Center
 import Brick.Widgets.Border
 import Brick.Widgets.Border.Style
-import Graphics.Vty as V
+import qualified Graphics.Vty as V
 
 
 import GameState
@@ -107,14 +107,35 @@ drawInfo appState = border
   <=> drawMsg appState
 
 
+drawButton :: Button -> Button -> Widget ()
+drawButton selected butt = withBorderStyle style
+  $ border
+  $ hCenter
+  $ str $ toText butt
+
+  where
+    style = if selected == butt then unicodeBold else unicode
+
+    toText b = case b of
+      Play -> "Play Game"
+      Exit -> "Exit"
+
+drawMenu :: AppState -> Widget ()
+drawMenu appState @ AppState { menuButton = butt, .. } = 
+      drawMsg appState
+  <=> drawButton butt Play
+  <=> drawButton butt Exit
+
+
 
 drawApp :: AppState -> [Widget ()]
-drawApp appState = return $ 
-      drawInfo appState 
-  <=> case phase appState of
-    PieceSelection  -> drawBoard appState
-    MoveSelection   -> drawBoard appState <=> drawDirs appState
-    OpponentMove    -> drawBoard appState
+drawApp appState = if phase appState == Menu then
+    return $ drawMenu appState
+  else return $ drawInfo appState 
+    <=> case phase appState of
+          PieceSelection  -> drawBoard appState
+          MoveSelection   -> drawBoard appState <=> drawDirs appState
+          OpponentMove    -> drawBoard appState
 
 
 

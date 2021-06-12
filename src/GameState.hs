@@ -60,6 +60,8 @@ emptyState w h = GameState {
   mover = White
 }
 
+defaultEmptyState = emptyState 8 8
+
 
 data Direction
   = TopLeft

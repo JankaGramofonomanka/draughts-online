@@ -28,7 +28,10 @@ import GameState
 import DataFormatting
 
 
-data Phase = PieceSelection | MoveSelection | OpponentMove
+data Phase = PieceSelection | MoveSelection | OpponentMove | Menu
+  deriving (Eq, Ord, Show, Read)
+
+data Button = Play | Exit
   deriving (Eq, Ord, Show, Read)
 
 nextPhase :: Phase -> Phase
@@ -44,18 +47,21 @@ data AppState = AppState {
   selectedDir :: Direction,
   selectedPos :: Pos,
   player :: Maybe Color,
-  msg :: Maybe String
+  msg :: Maybe String, 
+  menuButton :: Button
 }
 
 
 initAppState :: AppState
 initAppState = AppState {
-  phase = PieceSelection, 
-  gameState = defaultInitState,
+  phase = Menu,
+  gameState = defaultEmptyState,
   selectedDir = TopLeft,
   selectedPos = (0,0),
+  --player = Nothing,
   player = Just White,
-  msg = Nothing 
+  msg = Nothing,
+  menuButton = Play
 }
 
 
@@ -91,6 +97,10 @@ getPlayer = do
   AppState { player = pl, .. } <- get
   return pl
 
+getButton :: MonadState AppState m => m Button
+getButton = do
+  AppState { menuButton = butt, .. } <- get
+  return butt
 
 
 putPhase :: MonadState AppState m => Phase -> m ()
@@ -124,6 +134,11 @@ putPlayer mbColor = do
   AppState { player = _, .. } <- get
   put $ AppState { player = mbColor, .. }
 
+putButton :: MonadState AppState m => Button -> m ()
+putButton butt = do
+  AppState { menuButton = _, .. } <- get
+  put $ AppState { menuButton = butt, .. }
+
 
 
 swichPhase :: MonadState AppState m => m ()
@@ -156,6 +171,17 @@ mkMove = do
     Just locked -> do
       putSelectedPos locked
       putPhase MoveSelection
+
+
+requestGameState :: (MonadState AppState m, MonadIO m) => m ()
+requestGameState = do
+
+  resp <- liftIO $ Rq.get "http://127.0.0.1:11350/state"
+  jsonResp <- liftIO $ Rq.asJSON resp
+  let newGameSt = jsonResp ^. Rq.responseBody
+
+  putGameState newGameSt
+  putPhase PieceSelection
   
   
 
@@ -163,31 +189,25 @@ setMsg :: MonadState AppState m =>  HttpException -> m ()
 setMsg e = case e of
   
   HttpExceptionRequest _ (StatusCodeException _ txt) -> 
-    actuallySetMsg $ toString txt
-  _ -> actuallySetMsg " unknown exception"
-
-
-  where
-    actuallySetMsg txt = do
-      AppState { msg = msg, .. } <- get
-      let newMsg = Just $ "Error: " ++ txt
-      put $ AppState { msg = newMsg, .. }
+    putMsg $ Just $ "WRONG: " ++ toString txt
+  
+  _ -> putMsg $ Just "Error: unknown exception"
 
 
 unsetMsg :: MonadState AppState m =>  m ()
-unsetMsg = do
-  AppState { msg = msg, .. } <- get
-  put $ AppState { msg = Nothing, .. }
+unsetMsg = putMsg Nothing
 
 
 handleEnter :: AppState -> EventM n1 (Next AppState)
 handleEnter appState = case phase appState of
-  MoveSelection -> suspendAndResume $ catch x handler
-
-  _ -> continue $ execState swichPhase appState 
+  PieceSelection  -> continue $ execState (putPhase MoveSelection) appState 
+  MoveSelection   -> suspendAndResume $ catch execMove handler
+  Menu            -> execMenuButton appState
+  
+  _               -> continue appState 
 
   where
-    x = execStateT (unsetMsg >> mkMove) appState
+    execMove = execStateT (unsetMsg >> mkMove) appState
 
     handler :: HttpException -> IO AppState
     handler e = return $ 
@@ -202,7 +222,24 @@ resetMove = do
     Just locked -> do
       putSelectedPos locked
       putPhase MoveSelection
-  
+
+execMenuButton :: AppState -> EventM n1 (Next AppState)
+execMenuButton appState = let
+    butt = menuButton appState
+
+  in case butt of
+
+    Exit -> halt appState
+    Play -> suspendAndResume $ catch execView handler
+
+    where
+      execView = execStateT requestGameState appState
+
+      handler :: HttpException -> IO AppState
+      handler e = return $ execState (setMsg e) appState
+
+
+
 
 neighbourDirButton :: Direction -> V.Key -> Direction
 neighbourDirButton TopLeft  V.KRight  = TopRight
@@ -230,30 +267,41 @@ neighbourField dim pos k = let
 
     _         -> (x, y)
 
+neighbourButton :: Button -> V.Key -> Button
+neighbourButton butt k = case (butt, k) of
+  (Play, V.KDown) -> Exit
+  (Exit, V.KUp)   -> Play
+  _               -> butt
+  
 
 
 selectDir :: MonadState AppState m => V.Key -> m ()
 selectDir k = do
-  AppState { selectedDir = dir, .. } <- get
+  dir <- getSelectedDir
   let newDir = neighbourDirButton dir k
-  put $ AppState { selectedDir = newDir, .. }
+  putSelectedDir newDir
 
 selectPos :: MonadState AppState m => V.Key -> m ()
 selectPos k = do
-  AppState { selectedPos = pos, gameState = gameSt, .. } <- get
+  pos <- getSelectedPos
+  gameSt <- getGameState
   
   let dim = dimension gameSt
-
   let newPos = neighbourField dim pos k
 
-  put $ AppState { selectedPos = newPos, gameState = gameSt, .. }
-  
+  putSelectedPos newPos
+
+selectButton :: MonadState AppState m => V.Key -> m ()
+selectButton k = do
+  butt <- getButton
+  putButton $ neighbourButton butt k
 
 handleArrow :: MonadState AppState m => V.Key -> m ()
 handleArrow k = do
   ph <- getPhase
 
   case ph of
+    Menu            -> selectButton k
     MoveSelection   -> selectDir k
     PieceSelection  -> selectPos k
     _               -> return ()
@@ -262,23 +310,22 @@ handleArrow k = do
 
 swichPlayer :: MonadState AppState m => m ()
 swichPlayer = do
-  AppState { player = mColor, .. } <- get
-  case mColor of
-    Nothing -> return ()
-    Just color -> put $ AppState { player = Just $ opposite color, .. }
-
+  mColor <- getPlayer
+  putPlayer $ opposite <$> mColor
+  putPhase PieceSelection
+  
 handleEvent :: AppState -> BrickEvent n e -> EventM n1 (Next AppState)
 handleEvent appState (VtyEvent (V.EvKey k [])) = if isArrow k then
     continue $ execState (handleArrow k) appState
     
   else case k of
-    V.KEsc    -> halt appState 
-    V.KEnter  -> handleEnter appState 
+    V.KEsc      -> continue $ execState (putPhase Menu) appState
+    V.KEnter    -> handleEnter appState 
 
     -- cheat for the purpose of testing
     V.KChar 'c' -> continue $ execState swichPlayer appState
 
-    _         -> continue appState
+    _           -> continue appState
 
 handleEvent appState _ = continue appState
 
