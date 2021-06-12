@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6a02572c3fdc4fef84875fbf14ebe4409392e84f8bf1c0d6e488bb7560ce0584
+-- hash: 48978babd4531d7ee2443a085efcdef7e1e03abcded18fa1fdefca37d3821599
 
 name:           draughts-online
 version:        0.1.0.0
@@ -47,12 +47,15 @@ library
     , brick
     , colour
     , containers
+    , http-client
     , http-types
+    , lens
     , mtl
     , text
     , unordered-containers
     , vector
     , vty
+    , wreq
   default-language: Haskell2010
 
 executable draughts-online-client-exe
@@ -71,12 +74,15 @@ executable draughts-online-client-exe
     , colour
     , containers
     , draughts-online
+    , http-client
     , http-types
+    , lens
     , mtl
     , text
     , unordered-containers
     , vector
     , vty
+    , wreq
   default-language: Haskell2010
 
 executable draughts-online-host-exe
@@ -95,12 +101,15 @@ executable draughts-online-host-exe
     , colour
     , containers
     , draughts-online
+    , http-client
     , http-types
+    , lens
     , mtl
     , text
     , unordered-containers
     , vector
     , vty
+    , wreq
   default-language: Haskell2010
 
 test-suite draughts-online-test
@@ -120,10 +129,13 @@ test-suite draughts-online-test
     , colour
     , containers
     , draughts-online
+    , http-client
     , http-types
+    , lens
     , mtl
     , text
     , unordered-containers
     , vector
     , vty
+    , wreq
   default-language: Haskell2010

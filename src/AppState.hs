@@ -6,7 +6,9 @@
 module AppState where
 
 
-import Control.Monad.State
+import Data.Maybe
+import Control.Monad.State.Strict
+import Control.Exception
 
 
 import Brick hiding (Direction)
@@ -16,7 +18,13 @@ import Brick.Widgets.Border.Style
 import Graphics.Vty as V
 
 
+import Data.Aeson
+import qualified Network.Wreq as Rq
+import Control.Lens
+import Network.HTTP.Client
+
 import GameState
+import DataFormatting
 
 
 data Phase = PieceSelection | MoveSelection | Waiting
@@ -66,6 +74,36 @@ swichPhase = do
 
 
 
+mkMove :: (MonadState AppState m, MonadIO m) => m ()
+mkMove = do
+  AppState {gameState = gameSt, .. } <- get
+  let rqBody = toJSON $ MV (Black, (0,0), BotRight)
+
+  resp <- liftIO $ Rq.put "http://127.0.0.1:11350/move" rqBody
+
+  jsonResp <- liftIO $ Rq.asJSON resp
+  let newGameSt = jsonResp ^. Rq.responseBody
+  
+  put $ AppState {gameState = newGameSt, .. }
+  
+
+setMsg :: MonadState AppState m =>  HttpException -> m ()
+setMsg e = return ()
+
+handleEnter :: AppState ->  EventM n1 (Next AppState)
+handleEnter appState = case phase appState of
+  MoveSelection -> suspendAndResume $ catch x handler
+  --MoveSelection -> suspendAndResume $ x
+
+  _ -> continue $ execState swichPhase appState 
+
+  where
+    x = execStateT mkMove appState
+
+    handler :: HttpException -> IO AppState
+    handler e = return $ execState (setMsg e >> swichPhase) appState
+
+
 
 neighbourDirButton :: Direction -> Key -> Direction
 neighbourDirButton TopLeft  V.KRight  = TopRight
@@ -104,7 +142,6 @@ selectDir k = do
 selectPos :: MonadState AppState m => Key -> m ()
 selectPos k = do
   AppState { selectedPos = pos, gameState = gameSt, .. } <- get
-  return ()
   
   let dim = dimension gameSt
 
@@ -131,7 +168,8 @@ handleEvent appState (VtyEvent (V.EvKey k [])) = if isArrow k then
     
   else case k of
     V.KEsc    -> halt appState 
-    V.KEnter  -> continue $ execState swichPhase appState 
+    --V.KEnter  -> continue $ execState swichPhase appState 
+    V.KEnter  -> handleEnter appState 
 
     _         -> continue appState
 

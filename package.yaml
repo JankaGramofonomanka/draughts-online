@@ -33,6 +33,9 @@ dependencies:
 - colour
 - brick
 - vty
+- wreq
+- lens
+- http-client
 
 
 library:
