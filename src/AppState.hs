@@ -180,7 +180,7 @@ unsetMsg = do
   put $ AppState { msg = Nothing, .. }
 
 
-handleEnter :: AppState ->  EventM n1 (Next AppState)
+handleEnter :: AppState -> EventM n1 (Next AppState)
 handleEnter appState = case phase appState of
   MoveSelection -> suspendAndResume $ catch x handler
 
@@ -191,9 +191,18 @@ handleEnter appState = case phase appState of
 
     handler :: HttpException -> IO AppState
     handler e = return $ 
-      execState (setMsg e >> putPhase PieceSelection) appState
+      execState (setMsg e >> resetMove) appState
 
+resetMove :: MonadState AppState m => m ()
+resetMove = do
+  gameSt <- getGameState
+  case lock gameSt of
+    Nothing -> putPhase PieceSelection
 
+    Just locked -> do
+      putSelectedPos locked
+      putPhase MoveSelection
+  
 
 neighbourDirButton :: Direction -> V.Key -> Direction
 neighbourDirButton TopLeft  V.KRight  = TopRight
