@@ -2,14 +2,11 @@ module Main where
 
 
 import Brick
-import Brick.Widgets.Center
-import Brick.Widgets.Border
-import Brick.Widgets.Border.Style
-import Graphics.Vty as V
 
 
-import Widgets
-import AppState
+import Widgets (drawApp, theMap)
+import AppState 
+import Client (handleEvent)
 
 
 
