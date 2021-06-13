@@ -9,19 +9,7 @@ import qualified Data.List as L
 import Control.Monad.Except
 import Control.Monad.State.Strict
 
-import Errors ( Error, 
-                outOfBoardError, 
-                placedOnWhiteError, 
-                pieceNonExistentError,
-                piecesCollideError,
-                opponentPieceError,
-                cannotMoveError,
-                fieldNotEmptyError,
-                opponentMoveError
-              )
-
-
-
+import Errors
 
 
 -- `GameState` data definition ------------------------------------------------
@@ -47,9 +35,12 @@ data GameState = GameState {
   -- if `lock` = `Just (x, y)`, then only the piece on `(x, y)` can be moved
   lock :: Maybe Pos,
 
+  excludedDirections :: [Direction],
+
   -- who is currently moving
   mover :: Color,
 
+  -- who joined
   joined :: (Bool, Bool)
 
 } deriving (Ord, Eq, Show, Read)
@@ -59,6 +50,7 @@ emptyState w h = GameState {
   board = M.empty,
   dimension = (w, h),
   lock = Nothing,
+  excludedDirections = [],
   mover = White, 
   joined = (False, False)
 }
@@ -73,6 +65,9 @@ data Direction
   | BotRight
 
   deriving (Ord, Eq, Show, Read)
+
+allDirections :: [Direction]
+allDirections = [TopLeft, TopRight, BotLeft, BotRight]
 
 type Move = Pos -> Pos
 
@@ -113,6 +108,11 @@ getLock :: MonadState GameState m => m (Maybe Pos)
 getLock = do
   state <- get
   return $ lock state
+
+getExcludedDirs :: MonadState GameState m => m [Direction]
+getExcludedDirs = do
+  state <- get
+  return $ excludedDirections state
 
 getMover :: MonadState GameState m => m Color
 getMover = do
@@ -165,8 +165,8 @@ putLock newLock = do
   GameState { lock = _, .. } <- get
   put $ GameState { lock = newLock, .. }
 
-switchMover :: MonadState GameState m => m ()
-switchMover = do
+swichMover :: MonadState GameState m => m ()
+swichMover = do
   GameState { mover = color, .. } <- get
   put $ GameState { mover = opposite color, .. }
 
@@ -174,6 +174,11 @@ putJoined :: MonadState GameState m => (Bool, Bool) -> m ()
 putJoined jnd = do
   GameState { joined = _, .. } <- get
   put $ GameState { joined = jnd, .. }
+
+putExcludedDirs :: MonadState GameState m => [Direction] -> m ()
+putExcludedDirs dirs = do
+  GameState { excludedDirections = _, .. } <- get
+  put $ GameState { excludedDirections = dirs, .. }
 
 
 
@@ -222,10 +227,13 @@ assertEmpty pos = do
 
 
 assertCanMove :: (MonadState GameState m, MonadError Error m) => 
-  Color -> Pos -> m ()
-assertCanMove color pos = do
+  Color -> Pos -> Direction -> m ()
+assertCanMove color pos dir = do
   mover <- getMover
   unless (mover == color) $ throwError opponentMoveError
+
+  excluded <- getExcludedDirs
+  when (dir `elem` excluded) $ throwError lockedDirectionError
 
   lock <- getLock
   
@@ -257,7 +265,7 @@ placeNewPiece piece pos = do
 
 
 
--- lock / unlock pieces -------------------------------------------------------
+-- combo handling -------------------------------------------------------------
 lockPieceUnsafe :: MonadState GameState m => Pos -> m ()
 lockPieceUnsafe pos = putLock $ Just pos
 
@@ -273,7 +281,48 @@ lockPiece color pos = do
 unlock :: MonadState GameState m => m ()
 unlock = putLock Nothing
 
+makeDirsExclusive :: MonadState GameState m => [Direction] -> m ()
+makeDirsExclusive dirs = do
 
+  let excluded = filter (`notElem` dirs) allDirections
+
+  putExcludedDirs excluded
+
+unlockDirs :: MonadState GameState m => m ()
+unlockDirs = putExcludedDirs []
+
+
+
+
+
+dirsWhereScorePossible :: (MonadState GameState m, MonadError Error m) => 
+  Color -> Pos -> m [Direction]
+dirsWhereScorePossible color pos = 
+  filterM (scorePossible color pos) allDirections
+
+hasOpponentPiece :: MonadState GameState m =>
+  Color -> Pos -> Direction -> m Bool
+hasOpponentPiece color pos dir = do
+  let move = toMove dir
+  let neighbourPos = move pos
+
+  occupancy <- posOccupancy neighbourPos
+
+  case occupancy of
+    Nothing -> return False
+    Just col -> return $ col == opposite color
+
+scorePossible :: (MonadState GameState m, MonadError Error m) =>
+  Color -> Pos -> Direction -> m Bool
+scorePossible color pos dir = do
+  let move = toMove dir
+  let destination = (move . move) pos
+
+  validDestination <- onBoard destination
+  sthToBeScored <- hasOpponentPiece color pos dir
+  occupancy <- posOccupancy destination
+  
+  return $ validDestination && sthToBeScored && occupancy == Nothing
 
 
 
@@ -284,7 +333,8 @@ movePiece :: (MonadState GameState m, MonadError Error m) =>
   Color -> Pos -> Direction -> m ()
 movePiece color pos dir = do
 
-  assertCanMove color pos
+  assertCanMove color pos dir
+  unlockDirs
   
   let move = toMove dir
   let newPos = move pos
@@ -303,7 +353,7 @@ movePiece color pos dir = do
 
       unlock
 
-      switchMover
+      swichMover
 
 
     Just piece -> do
@@ -316,8 +366,15 @@ movePiece color pos dir = do
       removePieceUnsafe pos
       removePieceUnsafe newPos
       placePieceUnsafe color newNewPos
+
+      scoreDirs <- dirsWhereScorePossible color newNewPos
+      if null scoreDirs then do
+        swichMover
+        unlock
       
-      lockPiece color newNewPos
+      else do
+        makeDirsExclusive scoreDirs
+        lockPiece color newNewPos
 
 
 

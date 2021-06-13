@@ -34,16 +34,18 @@ instance ToJSON GameState where
   toJSON GameState  { board = board,
                       dimension = (w, h),
                       lock = lock,
+                      excludedDirections = excludedDirs,
                       mover = mover,
                       joined = joined
                     } 
 
-    = Object $ HM.fromList  [ ("board",   fromBoard board),
-                              ("width",   toJSON w),
-                              ("height",  toJSON h),
-                              ("lock",    toJSON lock),
-                              ("mover",   toJSON mover),
-                              ("joined",  toJSON joined)
+    = Object $ HM.fromList  [ ("board",         fromBoard board),
+                              ("width",         toJSON w),
+                              ("height",        toJSON h),
+                              ("lock",          toJSON lock),
+                              ("excludedDirs",  toJSON excludedDirs),
+                              ("mover",         toJSON mover),
+                              ("joined",        toJSON joined)
                             ]
   
     where
@@ -65,6 +67,7 @@ instance FromJSON GameState where
     h <- obj .: "height"
 
     lock <- obj .: "lock"
+    excludedDirs <- obj .: "excludedDirs"
     mover <- obj .: "mover"
 
     boardArr <- obj .: "board"
@@ -76,6 +79,7 @@ instance FromJSON GameState where
     return GameState  { board = board,
                         dimension = (w, h),
                         lock = lock,
+                        excludedDirections = excludedDirs,
                         mover = mover,
                         joined = joined
                       }
@@ -136,3 +140,6 @@ instance FromJSON MoveInfo where
     return $ MV (color, (x, y), dir)
 
   parseJSON _ = empty
+
+
+

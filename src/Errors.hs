@@ -37,3 +37,6 @@ opponentMoveError = "move of the opponent"
 
 cannotJoinError :: Error
 cannotJoinError = "both players alredy joined"
+
+lockedDirectionError :: Error
+lockedDirectionError = "attempt to move in a locked direction"
