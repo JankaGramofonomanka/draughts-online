@@ -124,6 +124,11 @@ putButton butt = do
   put $ AppState { menuButton = butt, .. }
 
 
+putHost :: MonadState AppState m => String -> m ()
+putHost url = do
+  AppState { host = _, .. } <- get
+  put $ AppState { host = url, .. }
+
 
 
 
