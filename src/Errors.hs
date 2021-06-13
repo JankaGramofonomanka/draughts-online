@@ -6,10 +6,10 @@ type Error = String
 
 
 outOfBoardError :: Error
-outOfBoardError = "piece is placed out of board"
+outOfBoardError = "attempt to place out of board"
 
 placedOnWhiteError :: Error
-placedOnWhiteError = "piece is placed on a white field"
+placedOnWhiteError = "attempt to place on a white field"
 
 pieceNonExistentError :: Error
 pieceNonExistentError = "piece does not exist"
@@ -39,4 +39,4 @@ cannotJoinError :: Error
 cannotJoinError = "both players alredy joined"
 
 lockedDirectionError :: Error
-lockedDirectionError = "attempt to move in a locked direction"
+lockedDirectionError = "cannot move in that direction"
