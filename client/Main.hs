@@ -2,7 +2,10 @@ module Main where
 
 
 import Brick
-
+import Brick.BChan
+import Graphics.Vty
+import Control.Concurrent
+import Control.Monad (forever)
 
 import Widgets (drawApp, theMap)
 import AppState 
@@ -24,6 +27,21 @@ app = App { appDraw = drawApp
 
 main :: IO ()
 main = do
-  endState <- defaultMain app initAppState
+  eventChan <- newBChan 10
+  let buildVty = mkVty defaultConfig
+  initVty <- buildVty
+
+  _ <- heartbeat eventChan
+
+  --endState <- defaultMain app initAppState
+  endState <- customMain initVty buildVty (Just eventChan) app initAppState
   print $ phase endState
   
+
+seconds :: Int -> Int
+seconds n = n * 1000000
+
+heartbeat chan = forkIO $ forever $ do
+  threadDelay $ seconds 1
+  writeBChan chan ()
+

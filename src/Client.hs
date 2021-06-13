@@ -57,7 +57,6 @@ requestGameState = do
   let newGameSt = jsonResp ^. Rq.responseBody
 
   putGameState newGameSt
-  putPhase PieceSelection
 
 
 joinGame :: (MonadState AppState m, MonadIO m) => m ()
@@ -78,6 +77,25 @@ joinIfNecessary = do
   mbPlayer <- getPlayer
 
   when (mbPlayer == Nothing) joinGame
+
+
+updatePhase :: MonadState AppState m => m ()
+updatePhase = do
+  mbPlayer <- getPlayer
+
+  case mbPlayer of
+    Nothing -> return ()
+    
+    Just player -> do  
+        gameSt <- getGameState
+
+        if mover gameSt == player then
+          putPhase PieceSelection
+        
+        else
+          putPhase OpponentMove
+          
+
 
 
 setErrMsg :: MonadState AppState m => HttpException -> m ()
@@ -131,10 +149,10 @@ execMenuButton appState = let
   in case butt of
 
     Exit -> halt appState
-    Play -> liftIO (catch execView handler) >>= continue
+    Play -> liftIO (catch (execStateT execView appState) handler) >>= continue
 
     where
-      execView = execStateT (joinIfNecessary >> requestGameState) appState
+      execView = joinIfNecessary >> requestGameState >> updatePhase
 
       handler :: HttpException -> IO AppState
       handler e = return $ execState (setErrMsg e) appState
@@ -151,6 +169,7 @@ handleArrow k = do
     Menu            -> selectButton k
     MoveSelection   -> selectDir k
     PieceSelection  -> selectPos k
+    OpponentMove    -> selectPos k
     _               -> return ()
 
 
@@ -174,6 +193,15 @@ handleEvent appState (VtyEvent (V.EvKey k [])) = if isArrow k then
 
     _           -> continue appState
 
+handleEvent appState (AppEvent e) = 
+  liftIO (execStateT execView appState) >>= continue
+
+  where
+
+    execView = do
+      phase <- getPhase
+      when (phase == OpponentMove) $ requestGameState >> updatePhase
+  
 handleEvent appState _ = continue appState
 
 isArrow :: V.Key -> Bool
