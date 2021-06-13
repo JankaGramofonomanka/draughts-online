@@ -26,7 +26,8 @@ data AppState = AppState {
   selectedPos :: Pos,
   player :: Maybe Color,
   msg :: Maybe String, 
-  menuButton :: Button
+  menuButton :: Button,
+  host :: String
 }
 
 
@@ -38,7 +39,8 @@ initAppState = AppState {
   selectedPos = (0,0),
   player = Nothing,
   msg = Nothing,
-  menuButton = Play
+  menuButton = Play,
+  host = "http://127.0.0.1:11350"
 }
 
 
@@ -79,6 +81,12 @@ getButton = do
   AppState { menuButton = butt, .. } <- get
   return butt
 
+getHost :: MonadState AppState m => m String
+getHost = do
+  AppState { host = url, .. } <- get
+  return url
+
+
 
 putPhase :: MonadState AppState m => Phase -> m ()
 putPhase ph = do
@@ -89,7 +97,6 @@ putGameState :: MonadState AppState m => GameState -> m ()
 putGameState gs = do
   AppState { gameState = _, .. } <- get
   put $ AppState { gameState = gs, .. }
-
 
 putSelectedDir :: MonadState AppState m => Direction -> m ()
 putSelectedDir dir = do
@@ -120,9 +127,11 @@ putButton butt = do
 
 
 
+setMsg :: MonadState AppState m => String -> m ()
+setMsg s = putMsg $ Just s
 
 
-unsetMsg :: MonadState AppState m =>  m ()
+unsetMsg :: MonadState AppState m => m ()
 unsetMsg = putMsg Nothing
 
 

@@ -21,7 +21,53 @@ import GameState
 import DataFormatting
 import AppState
 
+-- some utils -----------------------------------------------------------------
+mkURL :: String -> String -> String
+mkURL host endpoint = case endpoint of
+  "" -> host
+  _ -> case (last host, head endpoint) of
+    ('/', '/')  -> host ++ tail endpoint
+    ('/', _)    -> host ++ endpoint
+    (_,   '/')  -> host ++ endpoint
+    (_,   _)    -> host ++ "/" ++ endpoint
 
+
+catchStateTIO :: Exception e => s -> StateT s IO a -> (e -> IO s) -> IO s
+catchStateTIO s exec handler = catch (execStateT exec s) handler
+
+httpHandler :: AppState -> HttpException -> IO AppState
+httpHandler appState e = return $ execState (setErrMsg e) appState
+
+setErrMsg :: MonadState AppState m => HttpException -> m ()
+setErrMsg e = case e of
+  
+  HttpExceptionRequest _ (StatusCodeException _ txt) -> 
+    setMsg $ "WRONG! " ++ toString txt
+  
+  InvalidUrlException _ _ -> setMsgE "invalid URL"
+
+  HttpExceptionRequest _ content -> setMsgE $ case content of
+
+    ResponseTimeout           -> "host does not answer (response timeout)"
+    ConnectionTimeout         -> "cannot connect to host (connection timeout)"
+    ConnectionFailure _       -> "cannot connect to host (connection failure)"
+    InvalidDestinationHost _  -> "cannot connect to host (ivalid host)"
+
+    
+    -- other exceptions that I do not expect
+    _ -> "some unexpected exception"
+
+
+  where
+
+    setMsgE s = setMsg $ "ERROR! " ++ s
+
+
+
+
+
+
+-------------------------------------------------------------------------------
 checkEndGame :: MonadState AppState m => m ()
 checkEndGame = do
   gameSt <- getGameState
@@ -48,9 +94,12 @@ mkMove = do
   pos <- getSelectedPos
   dir <- getSelectedDir
 
+  host <- getHost
+  let url = mkURL host "move"
+
   let rqBody = toJSON $ MV (fromJust color, pos, dir)
 
-  resp <- liftIO $ Rq.put "http://127.0.0.1:11350/move" rqBody
+  resp <- liftIO $ Rq.put url rqBody
 
   jsonResp <- liftIO $ Rq.asJSON resp
   let newGameSt = jsonResp ^. Rq.responseBody
@@ -69,7 +118,10 @@ mkMove = do
 requestGameState :: (MonadState AppState m, MonadIO m) => m ()
 requestGameState = do
 
-  resp <- liftIO $ Rq.get "http://127.0.0.1:11350/state"
+  host <- getHost
+  let url = mkURL host "state"
+
+  resp <- liftIO $ Rq.get url
   jsonResp <- liftIO $ Rq.asJSON resp
   let newGameSt = jsonResp ^. Rq.responseBody
 
@@ -80,10 +132,13 @@ requestGameState = do
 joinGame :: (MonadState AppState m, MonadIO m) => m ()
 joinGame = do
 
+  host <- getHost
+  let url = mkURL host "join"
+
   -- something to put in the request body
   let rqBody = toJSON ()
 
-  resp <- liftIO $ Rq.post "http://127.0.0.1:11350/join" rqBody
+  resp <- liftIO $ Rq.post url rqBody
   jsonResp <- liftIO $ Rq.asJSON resp
   let player = jsonResp ^. Rq.responseBody
 
@@ -116,13 +171,6 @@ updatePhase = do
 
 
 
-setErrMsg :: MonadState AppState m => HttpException -> m ()
-setErrMsg e = case e of
-  
-  HttpExceptionRequest _ (StatusCodeException _ txt) -> 
-    putMsg $ Just $ "WRONG: " ++ toString txt
-  
-  _ -> putMsg $ Just "Error: unknown exception"
 
 
 handleEnter :: AppState -> EventM n1 (Next AppState)
@@ -137,11 +185,11 @@ handleEnter appState = case phase appState of
 
 
 execMove :: AppState -> EventM n (Next AppState)
-execMove appState = liftIO (catch exec handler) >>= continue
+execMove appState = liftIO (catchErr wrapMkMove) >>= continue
   
   where
-
-    exec = execStateT (unsetMsg >> mkMove) appState
+    catchErr act = catchStateTIO appState act handler
+    wrapMkMove = unsetMsg >> mkMove
 
     handler :: HttpException -> IO AppState
     handler e = return $ 
@@ -159,7 +207,6 @@ execMove appState = liftIO (catch exec handler) >>= continue
 
 
 
-
 execMenuButton :: AppState -> EventM n1 (Next AppState)
 execMenuButton appState = let
     butt = menuButton appState
@@ -167,16 +214,14 @@ execMenuButton appState = let
   in case butt of
 
     Exit  -> halt appState
-    Watch -> liftIO (catchExec execWatch) >>= continue
-    Play  -> liftIO (catchExec execPlay)  >>= continue
+    Watch -> liftIO (catchErr watch) >>= continue
+    Play  -> liftIO (catchErr play)  >>= continue
 
     where
-      catchExec exec = catch (execStateT exec appState) handler
-      execWatch = requestGameState >> updatePhase
-      execPlay = joinIfNecessary >> requestGameState >> updatePhase
+      catchErr act = catchStateTIO appState act $ httpHandler appState
+      watch = unsetMsg >> requestGameState >> updatePhase
+      play = unsetMsg >> joinIfNecessary >> requestGameState >> updatePhase
 
-      handler :: HttpException -> IO AppState
-      handler e = return $ execState (setErrMsg e) appState
 
 
 
@@ -215,14 +260,18 @@ handleEvent appState (VtyEvent (V.EvKey k [])) = if isArrow k then
     _           -> continue appState
 
 handleEvent appState (AppEvent e) = 
-  liftIO (execStateT execView appState) >>= continue
+  liftIO (catchErr view) >>= continue
 
   where
 
-    execView = do
+    catchErr act  = catchStateTIO appState act $ httpHandler appState
+
+    view = do
       phase <- getPhase
       when (phase == OpponentMove || phase == Watching) $
         requestGameState >> updatePhase
+
+    
   
 handleEvent appState _ = continue appState
 
