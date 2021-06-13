@@ -22,6 +22,8 @@ import DataFormatting
 import AppState
 
 
+
+
 mkMove :: (MonadState AppState m, MonadIO m) => m ()
 mkMove = do
 
@@ -90,13 +92,20 @@ setErrMsg e = case e of
 handleEnter :: AppState -> EventM n1 (Next AppState)
 handleEnter appState = case phase appState of
   PieceSelection  -> continue $ execState (putPhase MoveSelection) appState 
-  MoveSelection   -> suspendAndResume $ catch execMove handler
+  MoveSelection   -> execMove appState
   Menu            -> execMenuButton appState
   
   _               -> continue appState 
 
+
+
+
+execMove :: AppState -> EventM n (Next AppState)
+execMove appState = liftIO (catch exec handler) >>= continue
+  
   where
-    execMove = execStateT (unsetMsg >> mkMove) appState
+
+    exec = execStateT (unsetMsg >> mkMove) appState
 
     handler :: HttpException -> IO AppState
     handler e = return $ 
@@ -115,8 +124,6 @@ handleEnter appState = case phase appState of
 
 
 
-
-
 execMenuButton :: AppState -> EventM n1 (Next AppState)
 execMenuButton appState = let
     butt = menuButton appState
@@ -124,7 +131,7 @@ execMenuButton appState = let
   in case butt of
 
     Exit -> halt appState
-    Play -> suspendAndResume $ catch execView handler
+    Play -> liftIO (catch execView handler) >>= continue
 
     where
       execView = execStateT (joinIfNecessary >> requestGameState) appState
