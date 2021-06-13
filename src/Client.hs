@@ -63,8 +63,8 @@ requestGameState = do
 joinGame :: (MonadState AppState m, MonadIO m) => m ()
 joinGame = do
 
-  -- something to 
-  let rqBody = toJSON ""
+  -- something to put in the request body
+  let rqBody = toJSON ()
 
   resp <- liftIO $ Rq.post "http://127.0.0.1:11350/join" rqBody
   jsonResp <- liftIO $ Rq.asJSON resp
