@@ -51,7 +51,7 @@ drawBoard appState = let
     
   
   in withBorderStyle unicode 
-    $ borderWithLabel (str "BOARD")
+    $ border
     $ hCenter
     $ joinBorders
     $ withBorderStyle unicodeBold
