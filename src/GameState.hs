@@ -331,12 +331,12 @@ initState w h rows = fromRight $ evalStateT buildState $ emptyState w h where
   fromRight (Right x) = x
   
   blackPositions = [ (x, y) | x <- [0..w-1],
-                              y <- [0..rows],
-                              x `mod` 2 == y `mod` 2 ]
+                              y <- [0 .. rows - 1],
+                              validPos (x, y) ]
 
   whitePositions = [ (x, y) | x <- [0..w-1],
                               y <- [h - rows .. h - 1],
-                              x `mod` 2 == y `mod` 2 ]
+                              validPos (x, y) ]
 
   buildState :: StateT GameState (Either Error) GameState
   buildState = mapM_ (placeNewPiece Black) blackPositions
