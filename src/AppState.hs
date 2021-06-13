@@ -11,10 +11,10 @@ import qualified Graphics.Vty as V
 import GameState
 
 
-data Phase = PieceSelection | MoveSelection | OpponentMove | Menu
+data Phase = PieceSelection | MoveSelection | OpponentMove | Menu | Watching
   deriving (Eq, Ord, Show, Read)
 
-data Button = Play | Exit
+data Button = Play | Exit | Watch
   deriving (Eq, Ord, Show, Read)
 
 
@@ -154,9 +154,11 @@ neighbourField dim pos k = let
 
 neighbourButton :: Button -> V.Key -> Button
 neighbourButton butt k = case (butt, k) of
-  (Play, V.KDown) -> Exit
-  (Exit, V.KUp)   -> Play
-  _               -> butt
+  (Play,  V.KDown)  -> Watch
+  (Watch, V.KDown)  -> Exit
+  (Exit,  V.KUp)    -> Watch
+  (Watch, V.KUp)    -> Play
+  _                 -> butt
   
 
 

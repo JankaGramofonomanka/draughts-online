@@ -21,8 +21,8 @@ import AppState
 
 
 
-fieldWidget :: Board -> Pos -> Int -> Int -> Widget ()
-fieldWidget brd selected y x = case M.lookup (x, y) brd of
+fieldWidget :: AppState -> Int -> Int -> Widget ()
+fieldWidget appState y x = case M.lookup (x, y) brd of
 
   Just Black  -> withAttr blackPieceAttr  $ str [lChar, '○', rChar]
   Just White  -> withAttr whitePieceAttr  $ str [lChar, '●', rChar]
@@ -31,8 +31,12 @@ fieldWidget brd selected y x = case M.lookup (x, y) brd of
   where
     fieldAttr = if validPos (x, y) then blackPosAttr else whitePosAttr
 
-    lChar = if (x, y) == selected then '[' else ' '
-    rChar = if (x, y) == selected then ']' else ' '
+    brd = board $ gameState appState
+    selected = selectedPos appState
+    ph = phase appState
+
+    lChar = if (x, y) == selected && ph /= Watching then '[' else ' '
+    rChar = if (x, y) == selected && ph /= Watching then ']' else ' '
 
 
 
@@ -40,11 +44,9 @@ fieldWidget brd selected y x = case M.lookup (x, y) brd of
 drawBoard :: AppState -> Widget ()
 drawBoard appState = let
     gameSt = gameState appState
-    (w, h) = dimension gameSt
-    brd = board gameSt
-    sel = selectedPos appState
+    (w, h) = dimension gameSt    
 
-    drawRow y = hBox $ map (fieldWidget brd sel y) [0..w-1]
+    drawRow y = hBox $ map (fieldWidget appState y) [0..w-1]
     drawBrd = vBox $ map drawRow [0..h-1]
     
   
@@ -92,6 +94,8 @@ drawPhase appState = let
     PieceSelection  -> str "Select piece to move"
     MoveSelection   -> str "Select where to move the piece"
     OpponentMove    -> str "Waiting for opponent ..."
+    Watching        -> str "Watching the game ..."
+    _               -> str ""
 
 
 drawMsg :: AppState -> Widget ()
@@ -117,13 +121,15 @@ drawButton selected butt = withBorderStyle style
     style = if selected == butt then unicodeBold else unicode
 
     toText b = case b of
-      Play -> "Play Game"
-      Exit -> "Exit"
+      Play  -> "Play Game"
+      Watch -> "Watch Game"
+      Exit  -> "Exit"
 
 drawMenu :: AppState -> Widget ()
 drawMenu appState @ AppState { menuButton = butt, .. } = 
       drawMsg appState
   <=> drawButton butt Play
+  <=> drawButton butt Watch 
   <=> drawButton butt Exit
 
 
@@ -135,7 +141,7 @@ drawApp appState = if phase appState == Menu then
     <=> case phase appState of
           PieceSelection  -> drawBoard appState
           MoveSelection   -> drawBoard appState <=> drawDirs appState
-          OpponentMove    -> drawBoard appState
+          _               -> drawBoard appState
 
 
 

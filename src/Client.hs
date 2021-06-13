@@ -84,7 +84,7 @@ updatePhase = do
   mbPlayer <- getPlayer
 
   case mbPlayer of
-    Nothing -> return ()
+    Nothing -> putPhase Watching
     
     Just player -> do  
         gameSt <- getGameState
@@ -148,11 +148,14 @@ execMenuButton appState = let
 
   in case butt of
 
-    Exit -> halt appState
-    Play -> liftIO (catch (execStateT execView appState) handler) >>= continue
+    Exit  -> halt appState
+    Watch -> liftIO (catchExec execWatch) >>= continue
+    Play  -> liftIO (catchExec execPlay)  >>= continue
 
     where
-      execView = joinIfNecessary >> requestGameState >> updatePhase
+      catchExec exec = catch (execStateT exec appState) handler
+      execWatch = requestGameState >> updatePhase
+      execPlay = joinIfNecessary >> requestGameState >> updatePhase
 
       handler :: HttpException -> IO AppState
       handler e = return $ execState (setErrMsg e) appState
@@ -200,7 +203,8 @@ handleEvent appState (AppEvent e) =
 
     execView = do
       phase <- getPhase
-      when (phase == OpponentMove) $ requestGameState >> updatePhase
+      when (phase == OpponentMove || phase == Watching) $
+        requestGameState >> updatePhase
   
 handleEvent appState _ = continue appState
 
