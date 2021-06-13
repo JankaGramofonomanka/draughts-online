@@ -36,7 +36,8 @@ instance ToJSON GameState where
                       lock = lock,
                       excludedDirections = excludedDirs,
                       mover = mover,
-                      joined = joined
+                      joined = joined,
+                      winner = winner
                     } 
 
     = Object $ HM.fromList  [ ("board",         fromBoard board),
@@ -45,7 +46,8 @@ instance ToJSON GameState where
                               ("lock",          toJSON lock),
                               ("excludedDirs",  toJSON excludedDirs),
                               ("mover",         toJSON mover),
-                              ("joined",        toJSON joined)
+                              ("joined",        toJSON joined),
+                              ("winner",        toJSON winner)
                             ]
   
     where
@@ -74,6 +76,7 @@ instance FromJSON GameState where
     board <- toBoard boardArr
 
     joined <- obj .: "joined"
+    winner <- obj .: "winner"
 
 
     return GameState  { board = board,
@@ -81,7 +84,8 @@ instance FromJSON GameState where
                         lock = lock,
                         excludedDirections = excludedDirs,
                         mover = mover,
-                        joined = joined
+                        joined = joined,
+                        winner = winner
                       }
 
     where

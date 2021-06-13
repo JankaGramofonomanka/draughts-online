@@ -41,7 +41,10 @@ data GameState = GameState {
   mover :: Color,
 
   -- who joined
-  joined :: (Bool, Bool)
+  joined :: (Bool, Bool),
+
+  -- who won
+  winner :: Maybe Color
 
 } deriving (Ord, Eq, Show, Read)
 
@@ -52,7 +55,8 @@ emptyState w h = GameState {
   lock = Nothing,
   excludedDirections = [],
   mover = White, 
-  joined = (False, False)
+  joined = (False, False),
+  winner = Nothing
 }
 
 defaultEmptyState = emptyState 8 8
@@ -124,6 +128,11 @@ getJoined = do
   state <- get
   return $ joined state
 
+getWinner :: MonadState GameState m => m (Maybe Color)
+getWinner = do
+  state <- get
+  return $ winner state
+
 
 
 
@@ -180,6 +189,10 @@ putExcludedDirs dirs = do
   GameState { excludedDirections = _, .. } <- get
   put $ GameState { excludedDirections = dirs, .. }
 
+putWinner :: MonadState GameState m => Maybe Color -> m ()
+putWinner mbColor = do
+  GameState { winner = _, .. } <- get
+  put $ GameState { winner = mbColor, .. }
 
 
 
@@ -377,6 +390,20 @@ movePiece color pos dir = do
         lockPiece color newNewPos
 
 
+
+checkWinner :: MonadState GameState m => m ()
+checkWinner = do
+  numBlacks <- getNumPieces Black
+  numWhites <- getNumPieces White
+  
+  if numBlacks == 0 then
+    putWinner $ Just White
+  
+  else if numWhites == 0 then
+    putWinner $ Just Black
+
+  else
+    return ()
 
 
 

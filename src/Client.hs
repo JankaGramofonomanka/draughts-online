@@ -22,6 +22,22 @@ import DataFormatting
 import AppState
 
 
+checkEndGame :: MonadState AppState m => m ()
+checkEndGame = do
+  gameSt <- getGameState
+
+  case winner gameSt of
+    Nothing -> return ()
+    Just color -> setWinMsg color
+
+setWinMsg :: MonadState AppState m => Color -> m ()
+setWinMsg color = do
+  mbPlayer <- getPlayer
+  case mbPlayer of
+    Nothing -> putMsg $ Just $ "The winner is: " ++ show color
+    Just col -> putMsg $ Just msg 
+      where
+        msg = if color == col then "YOU WON!!!" else "GAME OVER!"
 
 
 mkMove :: (MonadState AppState m, MonadIO m) => m ()
@@ -40,6 +56,7 @@ mkMove = do
   let newGameSt = jsonResp ^. Rq.responseBody
   
   putGameState newGameSt
+  checkEndGame
 
   case lock newGameSt of
     Nothing -> putPhase OpponentMove
@@ -57,6 +74,7 @@ requestGameState = do
   let newGameSt = jsonResp ^. Rq.responseBody
 
   putGameState newGameSt
+  checkEndGame
 
 
 joinGame :: (MonadState AppState m, MonadIO m) => m ()

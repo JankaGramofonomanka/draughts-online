@@ -64,7 +64,7 @@ moveView :: (MonadState GameState m, MonadError Error m, MonadIO m) =>
 moveView = do
   MV (color, pos, dir) <- jsonBody'
 
-  execGameAction $ movePiece color pos dir
+  execGameAction $ movePiece color pos dir >> checkWinner
   stateView
 
 restartView ::  (MonadState GameState m, MonadIO m) => ActionT  m ()
