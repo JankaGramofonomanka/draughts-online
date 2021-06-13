@@ -105,10 +105,9 @@ drawMsg AppState { msg = mMsg, .. } = case mMsg of
 
 drawInfo :: AppState -> Widget ()
 drawInfo appState = border
-    $ hCenter
-    $ drawPlayer appState
-  <=> drawPhase appState 
-  <=> drawMsg appState
+    $ hCenter (drawPlayer appState)
+  <=> hCenter (drawPhase appState )
+  <=> hCenter (drawMsg appState)
 
 
 drawButton :: Button -> Button -> Widget ()
