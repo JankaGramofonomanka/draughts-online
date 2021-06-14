@@ -308,7 +308,7 @@ unlockDirs = putExcludedDirs []
 
 
 
-dirsWhereScorePossible :: (MonadState GameState m, MonadError Error m) => 
+dirsWhereScorePossible :: (MonadState GameState m) => 
   Color -> Pos -> m [Direction]
 dirsWhereScorePossible color pos = 
   filterM (scorePossible color pos) allDirections
@@ -325,7 +325,7 @@ hasOpponentPiece color pos dir = do
     Nothing -> return False
     Just col -> return $ col == opposite color
 
-scorePossible :: (MonadState GameState m, MonadError Error m) =>
+scorePossible :: (MonadState GameState m) =>
   Color -> Pos -> Direction -> m Bool
 scorePossible color pos dir = do
   let move = toMove dir

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 011514ca3d428ee7e16860ce737bdf894a641a317d9d7975ff9b181e1c112c18
+-- hash: 944898d5d4381fb0655bf83a8f89592f3825dbc4bfdc56827d1cf052d2b0a9f3
 
 name:           draughts-online
 version:        0.1.0.0
@@ -35,6 +35,7 @@ library
       Host
       SimpleInterface
       Testing.ArbitraryInstances
+      Testing.TestGame
       Testing.TestJSON
       Widgets
   other-modules:
