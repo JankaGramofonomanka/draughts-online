@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f1a7dc0b5120b7d15f213eeaa7e88aeb6dc00ffb09dd08858fbb70de559205a8
+-- hash: eb96733cf29b1c1fe897206c3a7a0b15b9f1de17b551d61bb6c3d14d2c89cd5d
 
 name:           draughts-online
 version:        0.1.0.0
@@ -33,7 +33,6 @@ library
       Errors
       GameState
       Host
-      Lib
       SimpleInterface
       Widgets
   other-modules:
