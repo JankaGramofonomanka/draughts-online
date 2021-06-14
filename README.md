@@ -58,3 +58,8 @@ another little detail like this.)
 
 
 
+## Tests
+Note that the only things that are automatically tested in this project are
+game mechanics and conversion to and from JSON. This is due to the fact that 
+everything else has IO actions entangled in it.
+
