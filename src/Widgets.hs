@@ -20,7 +20,7 @@ import AppState
 
 
 
-
+-- board drawing --------------------------------------------------------------
 fieldWidget :: AppState -> Int -> Int -> Widget ()
 fieldWidget appState y x = case M.lookup (x, y) brd of
 
@@ -56,30 +56,10 @@ drawBoard appState = let
     $ joinBorders
     $ withBorderStyle unicodeBold
     $ drawBrd
-      
 
 
 
-dirWidget :: AppState -> Direction -> Widget ()
-dirWidget appState dir = withBorderStyle style
-  $ border
-  $ padLeftRight 1
-  $ str $ prettyShow dir
-
-  where
-    style = if selectedDir appState == dir then unicodeBold else unicode
-    prettyShow d = case d of
-      TopLeft   -> "↖"
-      TopRight  -> "↗"
-      BotLeft   -> "↙"
-      BotRight  -> "↘"
-
-
-drawDirs :: AppState -> Widget ()
-drawDirs appState = hCenter $ 
-      (dirWidget appState TopLeft <+> dirWidget appState TopRight)
-  <=> (dirWidget appState BotLeft <+> dirWidget appState BotRight)
-
+-- info drawing ---------------------------------------------------------------
 drawPlayer :: AppState -> Widget ()
 drawPlayer AppState { player = mbColor , .. } = str 
   $ "Your color is: " ++ case mbColor of
@@ -108,8 +88,33 @@ drawInfo appState = border
     $ hCenter (drawPlayer appState)
   <=> hCenter (drawPhase appState )
   <=> hCenter (drawMsg appState)
+      
 
 
+-- direction buttons ----------------------------------------------------------
+dirWidget :: AppState -> Direction -> Widget ()
+dirWidget appState dir = withBorderStyle style
+  $ border
+  $ padLeftRight 1
+  $ str $ prettyShow dir
+
+  where
+    style = if selectedDir appState == dir then unicodeBold else unicode
+    prettyShow d = case d of
+      TopLeft   -> "↖"
+      TopRight  -> "↗"
+      BotLeft   -> "↙"
+      BotRight  -> "↘"
+
+
+drawDirs :: AppState -> Widget ()
+drawDirs appState = hCenter $ 
+      (dirWidget appState TopLeft <+> dirWidget appState TopRight)
+  <=> (dirWidget appState BotLeft <+> dirWidget appState BotRight)
+
+
+
+-- menu buttons ---------------------------------------------------------------
 drawButton :: Button -> Button -> Widget ()
 drawButton selected butt = withBorderStyle style
   $ border
@@ -132,7 +137,7 @@ drawMenu appState @ AppState { menuButton = butt, .. } =
   <=> drawButton butt Exit
 
 
-
+-- app drawing ----------------------------------------------------------------
 drawApp :: AppState -> [Widget ()]
 drawApp appState = if phase appState == Menu then
     return $ drawMenu appState
@@ -146,11 +151,7 @@ drawApp appState = if phase appState == Menu then
 
 
 
-
-
-
-
-
+-- attr map -------------------------------------------------------------------
 blackPosAttr, whitePosAttr, blackPieceAttr, whitePieceAttr :: AttrName
 blackPosAttr = "blackPosAttr"
 whitePosAttr = "whitePosAttr"

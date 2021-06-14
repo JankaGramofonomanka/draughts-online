@@ -82,10 +82,6 @@ setErrMsg e = case e of
 
 
 
-
-
-
--------------------------------------------------------------------------------
 checkEndGame :: MonadState AppState m => m ()
 checkEndGame = do
   gameSt <- getGameState
@@ -104,6 +100,10 @@ setWinMsg color = do
         msg = if color == col then "YOU WON!!!" else "GAME OVER!"
 
 
+
+
+
+-- communication with host ----------------------------------------------------
 mkMove :: (MonadState AppState m, MonadIO m) => m ()
 mkMove = do
 
@@ -191,6 +191,10 @@ updatePhase = do
 
 
 
+
+
+
+-- event handling -------------------------------------------------------------
 handleEnter :: AppState -> EventM n1 (Next AppState)
 handleEnter appState = case phase appState of
   PieceSelection  -> continue $ execState (putPhase MoveSelection) appState 

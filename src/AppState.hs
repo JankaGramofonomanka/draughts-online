@@ -45,7 +45,7 @@ initAppState = AppState {
 
 
   
-
+-- get functions --------------------------------------------------------------
 getPhase :: MonadState AppState m => m Phase
 getPhase = do
   AppState { phase = ph, .. } <- get
@@ -87,7 +87,7 @@ getHost = do
   return url
 
 
-
+-- put functions --------------------------------------------------------------
 putPhase :: MonadState AppState m => Phase -> m ()
 putPhase ph = do
   AppState { phase = _, .. } <- get
@@ -131,7 +131,7 @@ putHost url = do
 
 
 
-
+-- other ----------------------------------------------------------------------
 setMsg :: MonadState AppState m => String -> m ()
 setMsg s = putMsg $ Just s
 
