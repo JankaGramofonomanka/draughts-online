@@ -396,11 +396,13 @@ checkWinner = do
   numBlacks <- getNumPieces Black
   numWhites <- getNumPieces White
   
-  if numBlacks == 0 then
+  if numBlacks == 0 then do
     putWinner $ Just White
+    putJoined (False, False)
   
-  else if numWhites == 0 then
+  else if numWhites == 0 then do
     putWinner $ Just Black
+    putJoined (False, False)
 
   else
     return ()

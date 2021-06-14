@@ -67,11 +67,6 @@ moveView = do
   execGameAction $ movePiece color pos dir >> checkWinner
   stateView
 
-restartView ::  (MonadState GameState m, MonadIO m) => ActionT  m ()
-restartView = do
-  lift $ put $ defaultInitState
-  stateView
-
 
 joinView :: (MonadState GameState m, MonadError Error m, MonadIO m) =>
   ActionT m ()
@@ -79,7 +74,13 @@ joinView = do
   joined <- lift getJoined
 
   case joined of
-    (False, False)  -> lift (putJoined (True, False)) >> json White
-    (True,  False)  -> lift (putJoined (True, True))  >> json Black
-    (False, True)   -> lift (putJoined (True, True))  >> json Black
+    (False, False)  -> lift (putJoined (True, False) >> restart) >> json White
+    (True,  False)  -> lift (putJoined (True, True)) >> json Black
+    (False, True)   -> lift (putJoined (True, True)) >> json Black
     (True,  True)   -> throwGameError cannotJoinError
+  
+    where restart = put defaultInitState
+
+
+
+

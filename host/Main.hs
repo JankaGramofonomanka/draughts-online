@@ -44,7 +44,6 @@ main = do
 
     get (fromString "state") stateView
     put (fromString "move") moveView
-    post (fromString "restart") restartView
     post (fromString "join") joinView
 
 
