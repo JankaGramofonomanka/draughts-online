@@ -33,9 +33,8 @@ main = do
 
   _ <- heartbeat eventChan
 
-  --endState <- defaultMain app initAppState
   endState <- customMain initVty buildVty (Just eventChan) app initAppState
-  print $ phase endState
+  return ()
   
 
 seconds :: Int -> Int
