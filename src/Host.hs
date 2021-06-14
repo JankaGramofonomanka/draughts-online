@@ -74,7 +74,7 @@ joinView = do
   joined <- lift getJoined
 
   case joined of
-    (False, False)  -> lift (putJoined (True, False) >> restart) >> json White
+    (False, False)  -> lift (restart >> putJoined (True, False)) >> json White
     (True,  False)  -> lift (putJoined (True, True)) >> json Black
     (False, True)   -> lift (putJoined (True, True)) >> json Black
     (True,  True)   -> throwGameError cannotJoinError
