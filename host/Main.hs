@@ -8,10 +8,11 @@ module Main where
 import Data.IORef
 import Data.String (fromString)
 
-import Web.Spock.Core
+import Web.Spock.Core hiding (head)
 
 import qualified Control.Monad.State as S
 import Control.Monad.Except
+import System.Environment (getArgs)
 
 
 import GameState
@@ -35,10 +36,13 @@ runStateApp r act = do
 
 main :: IO ()
 main = do
+  args <- getArgs
+  let port = if null args then 8080 else read $ head args
+
   r <- newIORef $ defaultInitState
 
   let runner = runStateApp r
-  runSpock 11350 $ spockT runner $ do
+  runSpock port $ spockT runner $ do
     post root testStorage
     post (fromString "err") testErrors
 
