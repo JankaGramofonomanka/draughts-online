@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: eb96733cf29b1c1fe897206c3a7a0b15b9f1de17b551d61bb6c3d14d2c89cd5d
+-- hash: 011514ca3d428ee7e16860ce737bdf894a641a317d9d7975ff9b181e1c112c18
 
 name:           draughts-online
 version:        0.1.0.0
@@ -34,13 +34,16 @@ library
       GameState
       Host
       SimpleInterface
+      Testing.ArbitraryInstances
+      Testing.TestJSON
       Widgets
   other-modules:
       Paths_draughts_online
   hs-source-dirs:
       src
   build-depends:
-      Spock
+      QuickCheck
+    , Spock
     , Spock-core
     , aeson
     , base >=4.7 && <5
@@ -67,7 +70,8 @@ executable draughts-online-client-exe
       client
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      Spock
+      QuickCheck
+    , Spock
     , Spock-core
     , aeson
     , base >=4.7 && <5
@@ -95,7 +99,8 @@ executable draughts-online-host-exe
       host
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      Spock
+      QuickCheck
+    , Spock
     , Spock-core
     , aeson
     , base >=4.7 && <5
@@ -124,7 +129,8 @@ test-suite draughts-online-test
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      Spock
+      QuickCheck
+    , Spock
     , Spock-core
     , aeson
     , base >=4.7 && <5

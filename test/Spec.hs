@@ -1,2 +1,5 @@
+import qualified Testing.TestJSON as JSON
+
+
 main :: IO ()
-main = putStrLn "Test suite not yet implemented"
+main = JSON.main

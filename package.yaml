@@ -37,6 +37,7 @@ dependencies:
 - lens
 - http-client
 - utf8-string
+- QuickCheck
 
 
 library:
@@ -73,3 +74,4 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - draughts-online
+
