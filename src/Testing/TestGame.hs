@@ -107,8 +107,8 @@ propMovePreservesValidPos p dir gameSt = let
 
 
 -- combo testing --------------------------------------------------------------
-propScored :: Pos -> Color -> Direction -> GameState -> (Bool, GameState)
-propScored pos color dir gameSt = let
+scoredNState :: Pos -> Color -> Direction -> GameState -> (Bool, GameState)
+scoredNState pos color dir gameSt = let
 
     oppColor = opposite color
     numOppPiecesBefore = evalState (getNumPieces oppColor) gameSt
@@ -160,7 +160,7 @@ getPropCombo checkSuccess p dir gameSt = let
 
     gameStOK = execState insertAction gameSt
 
-    (scored, gameStAfter) = propScored pos color dir gameStOK
+    (scored, gameStAfter) = scoredNState pos color dir gameStOK
     
     canScore = propScorePossible nnPos color gameStAfter
 
