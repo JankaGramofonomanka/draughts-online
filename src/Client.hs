@@ -23,13 +23,31 @@ import AppState
 
 -- some utils -----------------------------------------------------------------
 mkURL :: String -> String -> String
-mkURL host endpoint = case endpoint of
-  "" -> host
-  _ -> case (last host, head endpoint) of
-    ('/', '/')  -> host ++ tail endpoint
-    ('/', _)    -> host ++ endpoint
-    (_,   '/')  -> host ++ endpoint
-    (_,   _)    -> host ++ "/" ++ endpoint
+mkURL host endpoint = let
+    cleanHost = removeSlashBack $ removeHttp host
+    cleanEndpoint = removeSlashFront endpoint
+
+  in "http://" ++ cleanHost ++ "/" ++ cleanEndpoint
+
+  where
+
+    removeHttp s = case s of
+      'h':'t':'t':'p':'/':'/':ss      -> ss
+      'h':'t':'t':'p':'s':'/':'/':ss  -> ss
+      _                               -> s
+      
+    removeSlashBack s = case s of
+      ""  -> s
+      _   -> case last s of
+        '/' -> init s
+        _   -> s
+    
+    removeSlashFront s = case s of
+      ""      -> s
+      '/':ss  -> ss
+      _       -> s
+
+
 
 
 catchStateTIO :: Exception e => s -> StateT s IO a -> (e -> IO s) -> IO s
