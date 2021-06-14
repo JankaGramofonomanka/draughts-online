@@ -101,6 +101,8 @@ instance FromJSON GameState where
         color <- o .: "color"
 
         return $ M.insert (x, y) color board
+      
+      foldF _ _ = empty
 
 
   parseJSON _ = empty
@@ -124,7 +126,7 @@ instance FromJSON Direction where
 
 
 
-newtype MoveInfo = MV (Color, Pos, Direction)
+newtype MoveInfo = MV (Color, Pos, Direction) deriving (Eq, Ord, Show, Read)
 
 instance ToJSON MoveInfo where
   toJSON (MV (c, (x, y), dir)) 
