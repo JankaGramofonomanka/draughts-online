@@ -251,13 +251,6 @@ handleEsc appState = continue $ execState handleEscS appState where
       MoveSelection   -> putPhase PieceSelection
       _               -> putPhase Menu
 
-
--- a cheat to be removed
-swichPlayer :: MonadState AppState m => m ()
-swichPlayer = do
-  mColor <- getPlayer
-  putPlayer $ opposite <$> mColor
-  putPhase PieceSelection
   
 handleEvent :: AppState -> BrickEvent n e -> EventM n1 (Next AppState)
 handleEvent appState (VtyEvent (V.EvKey k [])) = if isArrow k then
@@ -266,9 +259,6 @@ handleEvent appState (VtyEvent (V.EvKey k [])) = if isArrow k then
   else case k of
     V.KEsc      -> handleEsc appState
     V.KEnter    -> handleEnter appState 
-
-    -- cheat for the purpose of testing
-    V.KChar 'c' -> continue $ execState swichPlayer appState
 
     _           -> continue appState
 
