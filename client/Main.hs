@@ -37,10 +37,10 @@ main = do
   return ()
   
 
-seconds :: Int -> Int
-seconds n = n * 1000000
+miliseconds :: Int -> Int
+miliseconds n = n * 1000
 
 heartbeat chan = forkIO $ forever $ do
-  threadDelay $ seconds 1
+  threadDelay $ miliseconds 100
   writeBChan chan ()
 
