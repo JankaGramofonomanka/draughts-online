@@ -40,7 +40,7 @@ initAppState = AppState {
   player = Nothing,
   msg = Nothing,
   menuButton = Play,
-  host = "http://127.0.0.1:11350"
+  host = ""
 }
 
 

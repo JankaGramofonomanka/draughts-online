@@ -214,16 +214,19 @@ execMenuButton appState = let
   in case butt of
 
     Exit  -> halt appState
-    Watch -> liftIO (catchErr watch) >>= continue
-    Play  -> liftIO (catchErr play)  >>= continue
+    Watch -> suspendAndResume $ catchErr (promptForHost >> watch)
+    Play  -> suspendAndResume $ catchErr (promptForHost >> play)
 
     where
       catchErr act = catchStateTIO appState act $ httpHandler appState
       watch = unsetMsg >> requestGameState >> updatePhase
-      play = unsetMsg >> joinIfNecessary >> requestGameState >> updatePhase
+      play = unsetMsg >> joinGame >> requestGameState >> updatePhase
 
-
-
+      promptForHost :: (MonadState AppState m, MonadIO m) => m ()
+      promptForHost = do
+        liftIO $ putStrLn "Enter the game host address:"
+        host <- liftIO getLine
+        putHost host
 
 
 
@@ -239,6 +242,16 @@ handleArrow k = do
     _               -> return ()
 
 
+handleEsc :: AppState -> EventM n (Next AppState)
+handleEsc appState = continue $ execState handleEscS appState where
+
+  handleEscS = do
+    ph <- getPhase
+    case ph of
+      MoveSelection   -> putPhase PieceSelection
+      _               -> putPhase Menu
+
+
 -- a cheat to be removed
 swichPlayer :: MonadState AppState m => m ()
 swichPlayer = do
@@ -251,7 +264,7 @@ handleEvent appState (VtyEvent (V.EvKey k [])) = if isArrow k then
     continue $ execState (handleArrow k) appState
     
   else case k of
-    V.KEsc      -> continue $ execState (putPhase Menu) appState
+    V.KEsc      -> handleEsc appState
     V.KEnter    -> handleEnter appState 
 
     -- cheat for the purpose of testing
