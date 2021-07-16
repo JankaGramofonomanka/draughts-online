@@ -42,8 +42,8 @@ You can select the buttons using arrows and `ENTER`.
 While in the game you will be able to move pieces by selecting a piece and
 selecting which direction to move the piece.
 Selecting both pieces and directions is done using arrows and `ENTER`. 
-Before a piece / direction it will be highlighted which piece /direction you 
-will chose if you press `ENTER`.
+Before selecting a piece / direction it will be highlighted which piece / 
+direction you will chose if you press `ENTER`.
 When selecting the direction you can press `ESC` and return to selecting the a 
 piece.
 
